@@ -22,4 +22,4 @@ Objectives of this project:
 TODO: Rules, architecture, coding, etc.
 
 Note, if you use the Visual Studio Community Edit>Rename feature (auto refactoring) and it changes
-a variable in a script component, you will have to manually drag the game object into the component field.
+a variable in a script component, you will have to manually redrag the game object into the component field.
