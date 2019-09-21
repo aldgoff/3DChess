@@ -62,6 +62,7 @@ namespace project_status
 
 // SceneManager GameObject includes these scripts as components:
 //   SceneManager
+//   PlanesBehavior
 //   PlanesSelection
 //   moreToCome
 
