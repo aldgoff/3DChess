@@ -33,7 +33,7 @@ public class ChessBoard3D : MonoBehaviour
 	ChessBoard3D() { print("ChessBoard3D.ctor()"); }
 	~ChessBoard3D() { print("ChessBoard3D.dtor()"); }
 
-	public ChessBoardProperties chessBoardProperties;
+	public ChessBoardProperties properties;
 
 	public Vector3Int size = new Vector3Int(0, 0, 0);
 
@@ -49,15 +49,15 @@ public class ChessBoard3D : MonoBehaviour
 	void Start()
     {
 		print("----- ChessBoard3D.Start() -----");
-		chessBoardProperties.squareSize = whiteSquare.transform.localScale.x;
-		chessBoardProperties.squareThickness = whiteSquare.transform.localScale.y;
+		properties.squareSize = whiteSquare.transform.localScale.x;
+		properties.squareThickness = whiteSquare.transform.localScale.y;
 
-		boardVerticalSep = chessBoardProperties.boardVerticalSep;
-		squareSep = chessBoardProperties.squareSep;
+		boardVerticalSep = properties.boardVerticalSep;
+		squareSep = properties.squareSep;
 
-		print("  Initial board.size = " + chessBoardProperties.size);
-		print("  squareSize = " + chessBoardProperties.squareSize);
-		print("  squareThickness = " + chessBoardProperties.squareThickness);
+		print("  Initial board.size = " + properties.size);
+		print("  squareSize = " + properties.squareSize);
+		print("  squareThickness = " + properties.squareThickness);
 		print("  boardVerticalSep = " + boardVerticalSep);
 		print("  squareSep = " + squareSep);
 	}
@@ -71,15 +71,15 @@ public class ChessBoard3D : MonoBehaviour
 
 		squares = new GameObject[size.x, size.y, size.z];
 
-		this.size = chessBoardProperties.size = size;
-		chessBoardProperties.locWhiteK11sq = locWhiteK11sq;
+		this.size = properties.size = size;
+		properties.locWhiteK11sq = locWhiteK11sq;
 		bool firstSqIsWhite = locWhiteK11sq.z % 2 == 1; // Convention is false, first square is black.
 
-		chessBoardProperties.ComputeBoardEdges();
+		properties.ComputeBoardEdges();
 
-		Vector2 boardXedges = chessBoardProperties.boardXedges;
-		Vector2 boardYedges = chessBoardProperties.boardYedges;
-		Vector2 boardZedges = chessBoardProperties.boardZedges;
+		Vector2 boardXedges = properties.boardXedges;
+		Vector2 boardYedges = properties.boardYedges;
+		Vector2 boardZedges = properties.boardZedges;
 
 		for (int k = 0; k < size.z; k++) // Build each level.
 		{
@@ -104,7 +104,7 @@ public class ChessBoard3D : MonoBehaviour
 		}
 
 		// Mark White K11 square in blue.
-		MeshRenderer myMesh = squares[chessBoardProperties.locWhiteK11sq.x, chessBoardProperties.locWhiteK11sq.y, chessBoardProperties.locWhiteK11sq.z].GetComponent<MeshRenderer>();
+		MeshRenderer myMesh = squares[properties.locWhiteK11sq.x, properties.locWhiteK11sq.y, properties.locWhiteK11sq.z].GetComponent<MeshRenderer>();
 		myMesh.materials[0].SetColor("_Color", Color.blue);
 	}
 }

@@ -30,7 +30,7 @@ public class HighLightSquareByGrid : MonoBehaviour
 	{
 		print("----- HighLightSquareByGrid.Start() -----");
 		print("  Initial chessBoard.size = " + chessBoard.size);
-		print("  Initial chessBoard.chessBoardProperties.size = " + chessBoard.chessBoardProperties.size);
+		print("  Initial chessBoard.chessBoardProperties.size = " + chessBoard.properties.size);
 		prevSquare = nullSquare;
 
 		srcSquare = nullSquare;
@@ -49,7 +49,7 @@ public class HighLightSquareByGrid : MonoBehaviour
 		Vector3 point = hit.point;
 
 		// Remember that chessboard coordiantes are permutation of Unity coordinates.
-		ChessBoardProperties props = chessBoard.chessBoardProperties; // New, SRP compliant.
+		ChessBoardProperties props = chessBoard.properties; // New, SRP compliant.
 
 		Vector2 boardXedges = props.boardXedges;
 		Vector2 boardYedges = props.boardYedges;
