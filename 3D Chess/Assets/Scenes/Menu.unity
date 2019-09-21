@@ -2749,7 +2749,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d94b9dd93c3bd49fe93432a2c638ceae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  chessBoardProperties: {fileID: 548365123}
+  properties: {fileID: 548365123}
   size: {x: 0, y: 0, z: 0}
   whiteSquare: {fileID: 1890668054632466650, guid: 1c277ab3de2014c1d95999bac09442c8,
     type: 3}
@@ -4602,7 +4602,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Create Board
+  m_Text: Create 3D Board
 --- !u!222 &1797737700
 CanvasRenderer:
   m_ObjectHideFlags: 0
