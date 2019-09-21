@@ -519,7 +519,7 @@ public class DemoRookAdvSq
 	int frameDelay = 0;
 	int perimeter = 0;
 
-	Color color = Color.red;
+	Color color = Color.blue;
 
 	public void RookPlaneAdvancementSquare(GameObject[,,] squares)
 	{
