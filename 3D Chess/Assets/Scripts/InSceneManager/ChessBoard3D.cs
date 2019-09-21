@@ -73,7 +73,7 @@ public class ChessBoard3D : MonoBehaviour
 
 		this.size = chessBoardProperties.size = size;
 		chessBoardProperties.locWhiteK11sq = locWhiteK11sq;
-		bool firstSqIsWhite = locWhiteK11sq.z % 2 == 0;
+		bool firstSqIsWhite = locWhiteK11sq.z % 2 == 1; // Convention is false, first square is black.
 
 		chessBoardProperties.ComputeBoardEdges();
 
