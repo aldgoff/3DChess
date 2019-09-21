@@ -20,3 +20,6 @@ Objectives of this project:
 6) Example of modern software engineering, such as design patterns.
 
 TODO: Rules, architecture, coding, etc.
+
+Note, if you use the Visual Studio Community Edit>Rename feature (auto refactoring) and it changes
+a variable in a script component, you will have to manually drag the game object into the component field.
