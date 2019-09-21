@@ -2,7 +2,7 @@
 Unity game to play chess in 3 dimensions on an 8x8x8 board; planar moves, advancement squares idiom.
 
 If the 2D board is a square of squares (8x8), then the 3D board should be a cube of cubes (8x8x8).
-However, simpling extending the linear moves of 2D chess fails to reproduce the feel of chess. 
+However, simply extending the linear moves of 2D chess fails to reproduce the feel of chess. 
 Thus this variation introduces planar moves, the pieces move in flat planes.
 The rook moves in 3 orthogonal planes; horizontal, leftVertical and rightVertical.
 This divides the board into 8 quadrants (octants?) so a rook and a king can defeat a lone king with exactly the same algorithm.
