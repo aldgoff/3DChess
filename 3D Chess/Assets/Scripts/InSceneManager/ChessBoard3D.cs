@@ -104,7 +104,8 @@ public class ChessBoard3D : MonoBehaviour
 		}
 
 		// Mark White K11 square in blue.
-		MeshRenderer myMesh = squares[properties.locWhiteK11sq.x, properties.locWhiteK11sq.y, properties.locWhiteK11sq.z].GetComponent<MeshRenderer>();
-		myMesh.materials[0].SetColor("_Color", Color.blue);
+		Vector3Int loc = properties.locWhiteK11sq;
+		MeshRenderer myMesh = squares[loc.x, loc.y, loc.z].GetComponent<MeshRenderer>();
+		myMesh.materials[0].SetColor("_Color", Color.cyan);
 	}
 }
