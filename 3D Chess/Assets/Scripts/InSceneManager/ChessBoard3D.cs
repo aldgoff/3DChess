@@ -30,8 +30,6 @@ using UnityEngine;
 
 public class ChessBoard3D : MonoBehaviour
 {
-	ChessBoard3D() { print("ChessBoard3D.ctor()"); }
-	~ChessBoard3D() { print("ChessBoard3D.dtor()"); }
 
 	public ChessBoardProperties properties;
 

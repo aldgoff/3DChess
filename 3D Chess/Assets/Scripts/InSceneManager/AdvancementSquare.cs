@@ -113,7 +113,7 @@ public class RookAdvSqQuad : AdvancementSquare // Complete.
 			}
 		}
 		else {
-			// Unknown rook plane, should never happen.
+			Debug.Log("*** Error: Unknown rook plane, should never happen.");
 			// TODO: How do you do asserts in C#?
 		}
 
