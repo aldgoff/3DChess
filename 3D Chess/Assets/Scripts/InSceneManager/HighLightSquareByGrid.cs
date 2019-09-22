@@ -1,11 +1,15 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 // Public member in SceneManager.
 
 public class HighLightSquareByGrid : MonoBehaviour
 {
+	public Dropdown mouseBehavior;
+	public int mouseBehaviorIndex;
+
 	public ChessBoard3D chessBoard;
 	public PlanesSelection planesSelection; // Dropdown script.
 	public HighlightRookPlanes highlightRookPlanes;
@@ -24,6 +28,13 @@ public class HighLightSquareByGrid : MonoBehaviour
 	DemoRookAdvSq demoRAS;
 	// Deprecated.
 	ShowRookAdvSq showRAS;
+
+	public void MouseBehaviorDropdownIndexChanged(int index)
+	{
+		mouseBehaviorIndex = index; // TODO: So we can see in Inspector at runtime - not working.
+		print("Mouse behavior dropdown index = " + mouseBehaviorIndex);
+		print("  MouseBehavior dropdown = " + mouseBehavior.captionText.text);
+	}
 
 	// Start is called before the first frame update
 	void Start()
@@ -121,8 +132,23 @@ public class HighLightSquareByGrid : MonoBehaviour
 	// Update is called once per frame
 	void Update()
 	{
-		//HighlightPlanes();
-		SetSrcDstSquares();
+		// TODO: Inefficient, should only query when it changes.
+		switch (mouseBehavior.captionText.text) {
+		case "Select Mouse Behavior":
+		case "Source/Destination":
+			break;
+
+		case "Highlight Planes on Mouseover":
+			HighlightPlanes();
+			break;
+		case "Animate Advancement Squares":
+			SetSrcDstSquares();
+			break;
+
+		default:
+			print("Unknown Mouse Behavior dropdown option - " + mouseBehavior.captionText.text);
+			break;
+		}
 
 		// Deprecated.
 		//DemoAdvancementSquare();
