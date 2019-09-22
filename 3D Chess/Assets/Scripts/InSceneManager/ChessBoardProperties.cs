@@ -7,9 +7,6 @@ using UnityEngine;
 // Properties of a 3D chess board fixed at create board time.
 public class ChessBoardProperties : MonoBehaviour
 {
-	ChessBoardProperties() { print("ChessBoardProperties.ctor()"); }
-	~ChessBoardProperties() { print("ChessBoardProperties.dtor()"); }
-
 	public Vector3Int size;
 	public Vector3Int locWhiteK11sq;
 

@@ -26,8 +26,8 @@ public class HighLightSquareByGrid : MonoBehaviour
 
 	// Deprecated.
 	DemoRookAdvSq demoRAS;
-	// Deprecated.
-	ShowRookAdvSq showRAS;
+
+	private bool debug;
 
 	public void MouseBehaviorDropdownIndexChanged(int index)
 	{
@@ -49,10 +49,7 @@ public class HighLightSquareByGrid : MonoBehaviour
 
 		// Deprecated.
 		demoRAS = new DemoRookAdvSq();
-		//demoRAS.InitPerimeters();
-
-		// Deprecated.
-		showRAS = new ShowRookAdvSq();
+		demoRAS.InitPerimeters();
 	}
 
 	Vector3Int FindRaycastSquare(RaycastHit hit)
@@ -69,7 +66,7 @@ public class HighLightSquareByGrid : MonoBehaviour
 		float squareThickness = props.squareThickness;
 		int boardVerticalSep = props.boardVerticalSep;
 
-		if(false) {
+		if(debug) {
 			print("boardXedges = " + boardXedges);
 			print("boardYedges = " + boardYedges);
 			print("boardZedges = " + boardZedges);
@@ -135,7 +132,9 @@ public class HighLightSquareByGrid : MonoBehaviour
 		// TODO: Inefficient, should only query when it changes.
 		switch (mouseBehavior.captionText.text) {
 		case "Select Mouse Behavior":
+			break;
 		case "Source/Destination":
+			demoRAS.RookPlaneAdvancementSquare(chessBoard.squares);
 			break;
 
 		case "Highlight Planes on Mouseover":
@@ -149,10 +148,6 @@ public class HighLightSquareByGrid : MonoBehaviour
 			print("Unknown Mouse Behavior dropdown option - " + mouseBehavior.captionText.text);
 			break;
 		}
-
-		// Deprecated.
-		//DemoAdvancementSquare();
-		//showRAS.DisplayPerimeters(chessBoard.squares);
 	}
 
 	void SetSrcDstSquares()
@@ -327,12 +322,6 @@ public class HighLightSquareByGrid : MonoBehaviour
 		return nullSquare;
 	}
 
-	// Deprecated.
-	void DemoAdvancementSquare()
-	{
-		demoRAS.RookPlaneAdvancementSquare(chessBoard.squares);
-	}
-
 	void HighlightPlanes()
 	{
 		Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition); // From camera to mouse.
@@ -409,78 +398,6 @@ public class HighLightSquareByGrid : MonoBehaviour
 	}
 }
 
-// Deprecated.
-public class ShowRookAdvSq : MonoBehaviour
-{
-	private bool doneShowing = true;
-	private int frameDelay = 0;
-	private int perimeter = 0;
-	private List<Vector3Int[]> perimeters;
-
-	bool perimetersChanged = true;
-
-	private void SetupPerimeters()
-	{
-		perimeters = new List<Vector3Int[]>();
-
-		Vector3Int[] perim1 = { new Vector3Int(1, 2, 1),
-								new Vector3Int(2, 2, 1),
-								new Vector3Int(2, 1, 1)
-							};
-		Vector3Int[] perim2 = { new Vector3Int(1, 3, 1),
-								new Vector3Int(2, 3, 1),
-								new Vector3Int(3, 3, 1),
-								new Vector3Int(3, 2, 1),
-								new Vector3Int(3, 1, 1)
-							};
-
-		perimeters.Add(perim1);
-		perimeters.Add(perim2);
-		print("perimeters.Count = " + perimeters.Count);
-		if (perimetersChanged) {
-			perimeter = 0;
-			doneShowing = false;
-			perimetersChanged = false; // Execute only once for now.
-		}
-	}
-
-	public void DisplayPerimeters(GameObject[,,] squares)
-	{
-		// Once advancement squares updated, listen for changes is src & dst squares.
-		if (doneShowing) {
-			SetupPerimeters();
-			return;
-		}
-
-		// Display advancement squares one perimeter per frame group.
-		if (frameDelay == 0) {
-			frameDelay = 30;
-
-			// On each pass, show the next perimeter.
-			MeshRenderer theMesh;
-			Material[] theMat;
-			Vector3Int[] perim = perimeters[perimeter];
-			for (int i=0; i<perim.Length; i++) {
-				Vector3Int square = perim[i];
-				theMesh = squares[square.x, square.y, square.z].GetComponent<MeshRenderer>();
-				theMat = theMesh.materials;
-				theMat[0].SetColor("_Color", Color.red);
-			}
-
-			// On last perimeter, set doneShowing = true;
-			print("  Show perimeter " + perimeter + " of size " + perim.Length);
-			if (perimeter++ >= perimeters.Count) {
-				doneShowing = true;
-			}
-		}
-
-		// Let a few frames go by...
-		else {
-			frameDelay--;
-		}
-	}
-}
-
 // This is a demo only - very hard coded, mono color on both black & white squares.
 // One horizontal rook advancement square on level 2.
 // Deprecated.
@@ -545,7 +462,7 @@ public class DemoRookAdvSq
 	int frameDelay = 0;
 	int perimeter = 0;
 
-	Color color = Color.blue;
+	Color color = Color.red;
 
 	public void RookPlaneAdvancementSquare(GameObject[,,] squares)
 	{

@@ -76,6 +76,7 @@ public class SceneManager : MonoBehaviour
     void Start()
     {
 		print("----- SceneManager.Start() -----");
+		Debug.Log("Testing object reference chain - " + chessBoard.properties.boardVerticalSep);
 	}
 
 	// Update is called once per frame
