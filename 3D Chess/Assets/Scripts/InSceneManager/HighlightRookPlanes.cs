@@ -19,10 +19,6 @@ public class HighlightRookPlanes : MonoBehaviour
 		dstSquare = nullSquare;
 	}
 	void Update() {
-		if (doneErasing) {
-			//ShowAdvSqs(); // One perimeter per frame group.
-		}
-		EraseAdvSqs(); // One perimeter per smaller frame group.
 	}
 
 	public IEnumerator ClearAdvSqByPerimeter()
@@ -189,12 +185,6 @@ public class HighlightRookPlanes : MonoBehaviour
 		}
 	}
 
-	// Advancement squares:
-	bool doneShowing = true;
-	bool doneErasing = true;
-	int frameDelay = 0;
-	int perimeter = 0;
-
 	private AdvancementSquare advSq;
 
 	private bool IsOffBoard(Vector3Int sq, Vector3Int size)
@@ -235,106 +225,6 @@ public class HighlightRookPlanes : MonoBehaviour
 		theMat[0].SetColor("_Color", sqScriptClass.baseColor);
 	}
 
-	private void EraseAdvSqs() // Called by Update().
-	{
-		if (doneErasing) {
-			return;
-		}
-
-		dstSquare = nullSquare;
-
-		if (frameDelay == 0) {
-			frameDelay = 20;
-			print("Erasing Rook perimeter = " + perimeter);
-
-			// Unhighlight squares.
-			float xPos = (dstSquare.x > srcSquare.x) ? 0.1f : -0.1f;
-			float yPos = (dstSquare.y > srcSquare.y) ? 0.1f : -0.1f;
-
-			if(perimeter >= 0) {
-				for (int i = 0; i < advSq.perimeters[perimeter].Length; i++) {
-					Vector3Int sq = advSq.perimeters[perimeter][i];
-
-					// Skip squares off the board.
-					if (IsOffBoard(sq, chessBoard.size)) {
-						continue;
-					}
-
-					// Unhighlight next square.
-					sqScriptClass = chessBoard.squares[sq.x, sq.y, sq.z].GetComponent<HighlightSquareByRayCasting>();
-					theMat = sqScriptClass.GetComponent<MeshRenderer>().materials;
-					theMat[0].SetColor("_Color", sqScriptClass.baseColor);
-				}
-
-				if (--perimeter < 0) {
-					print("Last perimeter");
-					doneErasing = true;
-				}
-			}
-		} else {
-			frameDelay--;
-		}
-	}
-
-	// Deprecated.
-	private void ShowAdvSqs() // Called by Update().
-	{
-		if (doneShowing) {
-			return;
-		} else {
-			if (frameDelay == 0) {
-				frameDelay = 30;
-				//print("Rook perimeter = " + perimeter);
-
-				// Restore previous perimeter's tilt to flat.
-				if (perimeter > 0) {
-					for (int i = 0; i < advSq.perimeters[perimeter - 1].Length; i++) {
-						if (i == 0) print("Restore perimeter " + (perimeter - 1));
-						Vector3Int sq = advSq.perimeters[perimeter - 1][i];
-						if (IsOffBoard(sq, chessBoard.size)) {
-							continue;
-						}
-						chessBoard.squares[sq.x, sq.y, sq.z].transform.rotation = new Quaternion(0, 0, 0, 0); // Restore.
-					}
-				}
-
-				// Highlight squares and ripple tilt current perimeter.
-				float xPos = (dstSquare.x > srcSquare.x) ? 0.1f : -0.1f;
-				float yPos = (dstSquare.y > srcSquare.y) ? 0.1f : -0.1f;
-
-				if (perimeter < advSq.perimeters.Count) {
-					for (int i = 0; i < advSq.perimeters[perimeter].Length; i++) {
-						if (i == 0) print("Rotate perimeter " + perimeter);
-						Vector3Int sq = advSq.perimeters[perimeter][i];
-
-						// Skip squares off the board.
-						if (IsOffBoard(sq, chessBoard.size)) {
-							continue;
-						}
-						chessBoard.squares[sq.x, sq.y, sq.z].transform.rotation = new Quaternion(4.0f, yPos, 0.0f, xPos); // Rotate.
-
-						// Highlight next square.
-						bool line = i == 0 || i == advSq.perimeters[perimeter].Length - 1;
-						HighlightSquare(sq, line);
-					}
-				}
-
-				if (++perimeter > advSq.perimeters.Count) {
-					print("Last perimeter");
-					doneShowing = true;
-				}
-			} else {
-				frameDelay--;
-			}
-		}
-	}
-
-	public void EraseAdvSq()
-	{
-		perimeter = advSq.perimeters.Count - 1;
-		doneErasing = false;
-	}
-
 	// Called by HighLightSquareByGrid.SetSrcDstSquares().
 	public bool AdvSq(Vector3Int srcSquare, Vector3Int dstSquare)
 	{
@@ -343,7 +233,6 @@ public class HighlightRookPlanes : MonoBehaviour
 		this.srcSquare = srcSquare;
 		this.dstSquare = dstSquare;
 		print("AdvSq: " + srcSquare + " / " + dstSquare);
-		perimeter = 0;
 
 		bool sameX = srcSquare.x == dstSquare.x;
 		bool sameY = srcSquare.y == dstSquare.y;
@@ -376,7 +265,6 @@ public class HighlightRookPlanes : MonoBehaviour
 				advSq = new RookAdvSqQuad("LeftVertical", srcSquare, dstSquare);
 				print("Rook LeftVertical plane, advancement square number of perimeters = " + advSq.Perims);
 			}
-			doneShowing = false;
 		} else {
 			print("Not in a rook plane.");
 			validAdvSq = false;

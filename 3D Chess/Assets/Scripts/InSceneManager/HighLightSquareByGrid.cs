@@ -270,15 +270,16 @@ public class HighLightSquareByGrid : MonoBehaviour
 								print("Move dstSquare");
 								Unhighlight(dstSquare);
 								if (planesSelection.rookPlanes.Contains(plane)) {
-									highlightRookPlanes.EraseAdvSq();
+									StartCoroutine(highlightRookPlanes.ClearAdvSqByPerimeter());
 									haveRookAdvSq = false;
 								}
 								dstSquare = Highlight(raycastSquare, dstColor);
-								//if (planesSelection.rookPlanes.Contains(plane)) {
-								//	if (highlightRookPlanes.AdvSq(srcSquare, dstSquare)) {
-								//		haveRookAdvSq = true;
-								//	}
-								//}
+								if (planesSelection.rookPlanes.Contains(plane)) {
+									if (highlightRookPlanes.AdvSq(srcSquare, dstSquare)) {
+										StartCoroutine(highlightRookPlanes.ShowAdvSqByPerimeter());
+										haveRookAdvSq = true;
+									}
+								}
 							}
 						}
 					}
@@ -299,6 +300,7 @@ public class HighLightSquareByGrid : MonoBehaviour
 				}
 				if (haveRookAdvSq) {
 					StartCoroutine(highlightRookPlanes.ClearAdvSqByPerimeter());
+					haveRookAdvSq = false;
 				}
 			}
 		}
@@ -402,9 +404,9 @@ public class HighLightSquareByGrid : MonoBehaviour
 	}
 }
 
+// Deprecated.
 // This is a demo only - very hard coded, mono color on both black & white squares.
 // One horizontal rook advancement square on level 2.
-// Deprecated.
 public class DemoRookAdvSq
 {
 	Vector2Int[] perimeter0 = new Vector2Int[1];
