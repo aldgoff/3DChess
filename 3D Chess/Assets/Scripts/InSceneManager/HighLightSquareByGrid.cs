@@ -247,6 +247,7 @@ public class HighLightSquareByGrid : MonoBehaviour
 							dstSquare = Highlight(raycastSquare, dstColor);
 							if (planesSelection.rookPlanes.Contains(plane)) {
 								if(highlightRookPlanes.AdvSq(srcSquare, dstSquare)) {
+									StartCoroutine(highlightRookPlanes.ShowAdvSqByPerimeter());
 									haveRookAdvSq = true;
 								}
 							}
@@ -295,6 +296,9 @@ public class HighLightSquareByGrid : MonoBehaviour
 				if (dstSquare != nullSquare) {
 					print("Clear board of dstSquare - " + dstSquare);
 					dstSquare = Unhighlight(dstSquare);
+				}
+				if (haveRookAdvSq) {
+					StartCoroutine(highlightRookPlanes.ClearAdvSqByPerimeter());
 				}
 			}
 		}

@@ -11,6 +11,8 @@ public class HighlightRookPlanes : MonoBehaviour
 
 	private Vector3Int srcSquare, dstSquare;
 
+	private bool debug;
+
 	void Start() {
 		print("----- HighlightRookPlanes.Start() -----");
 		srcSquare = nullSquare;
@@ -18,9 +20,74 @@ public class HighlightRookPlanes : MonoBehaviour
 	}
 	void Update() {
 		if (doneErasing) {
-			ShowAdvSqs(); // One perimeter per frame group.
+			//ShowAdvSqs(); // One perimeter per frame group.
 		}
 		EraseAdvSqs(); // One perimeter per smaller frame group.
+	}
+
+	public IEnumerator ClearAdvSqByPerimeter()
+	{
+		for (int perimeter = advSq.perimeters.Count-1; perimeter >= 0; perimeter--) {
+			if (true) print("^^^ Coroutine: clear perimeter " + (perimeter + 1));
+
+			for (int i = 0; i < advSq.perimeters[perimeter].Length; i++) {
+				Vector3Int sq = advSq.perimeters[perimeter][i];
+
+				// Skip squares off the board.
+				if (IsOffBoard(sq, chessBoard.size)) {
+					continue;
+				}
+
+				UnHighlightSquare(sq);
+			}
+
+			yield return new WaitForSeconds(0.1f); // TODO: put advSqByPerimeter speed under player control.
+		}
+	}
+
+	public IEnumerator ShowAdvSqByPerimeter()
+	{
+		for (int perimeter = 0; perimeter <= advSq.perimeters.Count; perimeter++) {
+			if(debug) print("^^^ Coroutine: show perimeter " + (perimeter + 1));
+
+			int prevPerimeter = perimeter - 1;
+			int currPerimeter = perimeter;
+
+			// Flatten ripple tilt of previous perimeter.
+			if(perimeter > 0) {
+				for (int i = 0; i < advSq.perimeters[prevPerimeter].Length; i++) {
+					Vector3Int sq = advSq.perimeters[prevPerimeter][i];
+
+					// Skip squares off the board.
+					if (IsOffBoard(sq, chessBoard.size)) {
+						continue;
+					}
+					chessBoard.squares[sq.x, sq.y, sq.z].transform.rotation = new Quaternion(0f, 0.0f, 0.0f, 0.0f); // Flatten.
+				}
+			}
+
+			// Highlight and ripple tilt current perimeter.
+			if (perimeter < advSq.perimeters.Count) {
+				float xPos = (dstSquare.x > srcSquare.x) ? 0.1f : -0.1f;
+				float yPos = (dstSquare.y > srcSquare.y) ? 0.1f : -0.1f;
+
+				for (int i = 0; i < advSq.perimeters[currPerimeter].Length; i++) {
+					Vector3Int sq = advSq.perimeters[currPerimeter][i];
+
+					// Skip squares off the board.
+					if (IsOffBoard(sq, chessBoard.size)) {
+						continue;
+					}
+					chessBoard.squares[sq.x, sq.y, sq.z].transform.rotation = new Quaternion(4.0f, yPos, 0.0f, xPos); // Rotate.
+
+					// Highlight next square as quad or line.
+					bool line = i == 0 || i == advSq.perimeters[currPerimeter].Length - 1;
+					HighlightSquare(sq, line);
+				}
+			}
+
+			yield return new WaitForSeconds(0.2f); // TODO: put advSqByPerimeter speed under player control.
+		}
 	}
 
 	private Material[] theMat;
@@ -147,7 +214,7 @@ public class HighlightRookPlanes : MonoBehaviour
 		return false;
 	}
 
-	public void HighlightSquare(Vector3Int sq, bool line, string point="")
+	public void HighlightSquare(Vector3Int sq, bool line, string point = "")
 	{
 		sqScriptClass = chessBoard.squares[sq.x, sq.y, sq.z].GetComponent<HighlightSquareByRayCasting>();
 		theMat = sqScriptClass.GetComponent<MeshRenderer>().materials;
@@ -159,6 +226,13 @@ public class HighlightRookPlanes : MonoBehaviour
 			rookColor = (sqScriptClass.baseColor == Color.white) ? RookQuadWhite : RookQuadBlack;   // Quadrant.
 		}
 		theMat[0].SetColor("_Color", rookColor);
+	}
+
+	public void UnHighlightSquare(Vector3Int sq)
+	{
+		sqScriptClass = chessBoard.squares[sq.x, sq.y, sq.z].GetComponent<HighlightSquareByRayCasting>();
+		theMat = sqScriptClass.GetComponent<MeshRenderer>().materials;
+		theMat[0].SetColor("_Color", sqScriptClass.baseColor);
 	}
 
 	private void EraseAdvSqs() // Called by Update().
@@ -202,6 +276,7 @@ public class HighlightRookPlanes : MonoBehaviour
 		}
 	}
 
+	// Deprecated.
 	private void ShowAdvSqs() // Called by Update().
 	{
 		if (doneShowing) {
@@ -223,7 +298,7 @@ public class HighlightRookPlanes : MonoBehaviour
 					}
 				}
 
-				// Highlight squares and ripple tilt.
+				// Highlight squares and ripple tilt current perimeter.
 				float xPos = (dstSquare.x > srcSquare.x) ? 0.1f : -0.1f;
 				float yPos = (dstSquare.y > srcSquare.y) ? 0.1f : -0.1f;
 
