@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
+/* Poor class name, this class supports highlighting both rook planes and advancement squares.
+ */
+
 public class HighlightRookPlanes : MonoBehaviour
 {
 	public ChessBoard3D chessBoard;
@@ -21,6 +24,29 @@ public class HighlightRookPlanes : MonoBehaviour
 	void Update() {
 	}
 
+	// Public interface for highlighting rook planes:
+	public void HighlightPlanes(string plane, Vector3Int square, Color color)
+	{
+		// Plane comes from the UI dropdown.
+		// Square is the cell the mouse is hovering over, determined by raycasting.
+		// Color if clear implies unhighlight.
+
+		if (plane == "Rook Planes") {
+			Horizontal(square, color);
+			LeftVertical(square, color);
+			RightVertical(square, color);
+		} else if (plane == "  Horizontal") {
+			Horizontal(square, color);
+		} else if (plane == "  LeftVertical") {
+			LeftVertical(square, color);
+		} else if (plane == "  RightVertical") {
+			RightVertical(square, color);
+		} else {
+			print("Error: unknown Rook plane " + plane);
+		}
+	}
+
+	// Partial public interface for highlighting rook advancement squares:
 	public IEnumerator ClearAdvSqByPerimeter()
 	{
 		for (int perimeter = advSq.perimeters.Count-1; perimeter >= 0; perimeter--) {
@@ -86,12 +112,24 @@ public class HighlightRookPlanes : MonoBehaviour
 		}
 	}
 
-	private Material[] theMat;
+	// Private members and methods:
 	private HighlightSquareByRayCasting sqScriptClass;
 
-	// Colors:
+	/* Algorithm for highlighting rook planes:
+	 * The nexus of the 3 planes is the square the mouse is hovering over (source square), revealed by ray casting.
+	 * For each plane that is selected in the UI, all the cells in that plane need to be highlighted.
+	 * The color for rook is red, but the tint depends on:
+	 *   the cells's relationship with the source square
+	 *   the base color of the cell (white or black)
+	 * The plane is scanned by a simple double for loop covering every cell in the plane.
+	 * For each cell in the plane the relationship with the source square is determined.
+	 * Highligting is done depending on the CellToSource and base color of the cell.
+	 */
+
+	// Color:
 	private Color rookColor = Color.red;
 
+	// Tints:
 	static private Color RookQuadWhite = Color.Lerp(Color.red, Color.white, 0.15f);     // Quad.
 	static private Color RookQuadBlack = Color.Lerp(Color.red, Color.black, 0.15f);
 
@@ -101,89 +139,82 @@ public class HighlightRookPlanes : MonoBehaviour
 	static private Color RookPointWhite = Color.Lerp(RookLineWhite, Color.black, 0.4f); // Point.
 	static private Color RookPointBlack = Color.Lerp(RookLineBlack, Color.black, 0.4f);
 
+	// Tinting:
+	private enum CellToSource {
+		Clear,	// Overloading enum so single interface for highlight and unhighlight.
+		Point,	// Nexus of the planes - darkest tink.
+		Line,	// Represents a straight line move - medium tint.
+		Quad,	// A pure quandrant move - lightest tint.
+	};
+
+	private CellToSource DetermineCellToSource(int srcA, int cellA, int srcB, int cellB, Color color)
+	{
+		if (color == Color.clear) {
+			return CellToSource.Clear;
+		}
+
+		if (srcA == cellA && srcB == cellB) {			return CellToSource.Point;
+		} else if (srcA == cellA || srcB == cellB) {	return CellToSource.Line;
+		} else {										return CellToSource.Quad;
+		}
+	}
+
+	private void HighlightSquare(int x, int y, int z, CellToSource cellToSrc)
+	{
+		sqScriptClass = chessBoard.squares[x, y, z].GetComponent<HighlightSquareByRayCasting>();
+		Material mat = sqScriptClass.GetComponent<MeshRenderer>().material;
+
+		if (cellToSrc == CellToSource.Clear) {
+			rookColor = sqScriptClass.baseColor;    // Unhighlight.
+		} else if (cellToSrc == CellToSource.Point) {
+			rookColor = (sqScriptClass.baseColor == Color.white) ? RookPointWhite : RookPointBlack; // Point.
+		} else if (cellToSrc == CellToSource.Line) {
+			rookColor = (sqScriptClass.baseColor == Color.white) ? RookLineWhite : RookLineBlack;   // Line.
+		} else if (cellToSrc == CellToSource.Quad) {
+			rookColor = (sqScriptClass.baseColor == Color.white) ? RookQuadWhite : RookQuadBlack;   // Quadrant.
+		}
+		else {
+			Debug.LogError("Error: unknown CellToSource = " + cellToSrc);
+		}
+		mat.SetColor("_Color", rookColor);
+
+		return;
+	}
+
 	// Planes:
-	public void HighlightPlanes(string plane, Vector3Int square, Color color)
+	private void Horizontal(Vector3Int srcSq, Color color)
 	{
-		if (plane == "Rook Planes") {
-			Horizontal(square, color);
-			LeftVertical(square, color);
-			RightVertical(square, color);
-		} else if (plane == "  Horizontal") { Horizontal(square, color);
-		} else if (plane == "  LeftVertical") { LeftVertical(square, color);
-		} else if (plane == "  RightVertical") { RightVertical(square, color);
-		} else {
-			print("Error: unknown Rook plane " + plane);
-		}
-	}
-
-	public void Horizontal(Vector3Int square, Color color)
-	{
-		int z = square.z;
-		for (int x = 0; x < chessBoard.size.x; x++) {
+		int z = srcSq.z; // Z-axis is constant in the Horizontal plane.
+		for (int x = 0; x < chessBoard.size.x; x++) { // Scan x & y.
 			for (int y = 0; y < chessBoard.size.y; y++) {
-				sqScriptClass = chessBoard.squares[x, y, z].GetComponent<HighlightSquareByRayCasting>();
-				theMat = sqScriptClass.GetComponent<MeshRenderer>().materials;
-				if (color == Color.clear) {
-					theMat[0].SetColor("_Color", sqScriptClass.baseColor);
-				} else {
-					if (square.x == x && square.y == y) {
-						rookColor = (sqScriptClass.baseColor == Color.white) ? RookPointWhite : RookPointBlack; // Point.
-					} else if (square.x == x || square.y == y) {
-						rookColor = (sqScriptClass.baseColor == Color.white) ? RookLineWhite : RookLineBlack;   // Line.
-					} else {
-						rookColor = (sqScriptClass.baseColor == Color.white) ? RookQuadWhite : RookQuadBlack;   // Quadrant.
-					}
-					theMat[0].SetColor("_Color", rookColor);
-				}
+				HighlightSquare(x, y, z, DetermineCellToSource(srcSq.x, x, srcSq.y, y, color));
 			}
 		}
 	}
 
-	public void LeftVertical(Vector3Int square, Color color)
+	private void LeftVertical(Vector3Int srcSq, Color color)
 	{
-		int y = square.y;
-		for (int z = 0; z < chessBoard.size.z; z++) {
-			for (int x = 0; x < chessBoard.size.x; x++) {
-				sqScriptClass = chessBoard.squares[x, y, z].GetComponent<HighlightSquareByRayCasting>();
-				theMat = sqScriptClass.GetComponent<MeshRenderer>().materials;
-				if (color == Color.clear) {
-					theMat[0].SetColor("_Color", sqScriptClass.baseColor);
-				} else {
-					if (square.x == x && square.z == z) {
-						rookColor = (sqScriptClass.baseColor == Color.white) ? RookPointWhite : RookPointBlack; // Point.
-					} else if (square.x == x || square.z == z) {
-						rookColor = (sqScriptClass.baseColor == Color.white) ? RookLineWhite : RookLineBlack;   // Line.
-					} else {
-						rookColor = (sqScriptClass.baseColor == Color.white) ? RookQuadWhite : RookQuadBlack;   // Quadrant.
-					}
-					theMat[0].SetColor("_Color", rookColor);
-				}
+		int y = srcSq.y; // Y-axis is constant in the LeftVertical plane.
+		for (int x = 0; x < chessBoard.size.x; x++) { // Scan x & z.
+			for (int z = 0; z < chessBoard.size.z; z++) {
+				HighlightSquare(x, y, z, DetermineCellToSource(srcSq.x, x, srcSq.z, z, color));
 			}
 		}
 	}
 
-	public void RightVertical(Vector3Int square, Color color)
+	private void RightVertical(Vector3Int srcSq, Color color)
 	{
-		int x = square.x;
-		for (int z = 0; z < chessBoard.size.z; z++) {
-			for (int y = 0; y < chessBoard.size.y; y++) {
-				sqScriptClass = chessBoard.squares[x, y, z].GetComponent<HighlightSquareByRayCasting>();
-				theMat = sqScriptClass.GetComponent<MeshRenderer>().materials;
-				if (color == Color.clear) {
-					theMat[0].SetColor("_Color", sqScriptClass.baseColor);
-				} else {
-					if (square.y == y && square.z == z) {
-						rookColor = (sqScriptClass.baseColor == Color.white) ? RookPointWhite : RookPointBlack; // Point.
-					} else if (square.z == z || square.y == y) {
-						rookColor = (sqScriptClass.baseColor == Color.white) ? RookLineWhite : RookLineBlack;   // Line.
-					} else {
-						rookColor = (sqScriptClass.baseColor == Color.white) ? RookQuadWhite : RookQuadBlack;   // Quadrant.
-					}
-					theMat[0].SetColor("_Color", rookColor);
-				}
+		int x = srcSq.x; // X-axis is constant in the RightVertical plane.
+		for (int y = 0; y < chessBoard.size.y; y++) { // Scan y & z.
+			for (int z = 0; z < chessBoard.size.z; z++) {
+				HighlightSquare(x, y, z, DetermineCellToSource(srcSq.y, y, srcSq.z, z, color));
 			}
 		}
 	}
+
+	/* Algorithm for highlighting rook advancement squares:
+	 * TBD
+	 */
 
 	private AdvancementSquare advSq;
 
@@ -207,7 +238,7 @@ public class HighlightRookPlanes : MonoBehaviour
 	public void HighlightSquare(Vector3Int sq, bool line, string point = "")
 	{
 		sqScriptClass = chessBoard.squares[sq.x, sq.y, sq.z].GetComponent<HighlightSquareByRayCasting>();
-		theMat = sqScriptClass.GetComponent<MeshRenderer>().materials;
+		Material mat = sqScriptClass.GetComponent<MeshRenderer>().material;
 		if (point == "Point") {
 			rookColor = (sqScriptClass.baseColor == Color.white) ? RookPointWhite : RookPointBlack; // Point.
 		} else if (line) {
@@ -215,14 +246,14 @@ public class HighlightRookPlanes : MonoBehaviour
 		} else {
 			rookColor = (sqScriptClass.baseColor == Color.white) ? RookQuadWhite : RookQuadBlack;   // Quadrant.
 		}
-		theMat[0].SetColor("_Color", rookColor);
+		mat.SetColor("_Color", rookColor);
 	}
 
 	public void UnHighlightSquare(Vector3Int sq)
 	{
 		sqScriptClass = chessBoard.squares[sq.x, sq.y, sq.z].GetComponent<HighlightSquareByRayCasting>();
-		theMat = sqScriptClass.GetComponent<MeshRenderer>().materials;
-		theMat[0].SetColor("_Color", sqScriptClass.baseColor);
+		Material mat = sqScriptClass.GetComponent<MeshRenderer>().material;
+		mat.SetColor("_Color", sqScriptClass.baseColor);
 	}
 
 	// Called by HighLightSquareByGrid.SetSrcDstSquares().
