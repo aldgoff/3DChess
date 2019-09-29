@@ -12,12 +12,29 @@ using System;
 //	 Rect: 5, 9, 13, 17 ...
 // Uses Strategy pattern to abstract differences between the 3 base pieces: Rook, Bishop, & Duke, and quadrant versus linear moves.
 
+public enum MetaSet
+{
+	Identical,
+	SuperSet,
+	SubSet,
+	ShiftSet,
+	Different,
+	Null,
+}
+
 // Base class.
 public class AdvancementSquare
 {
 	public int Perims { get; set; } // Is perimeters.Count, but avoids coupling API to List implementation.
 
 	public List<Vector3Int[]> perimeters; // Populated by daughter ctors. TODO: add First/Next/Last/Prev methods to complete decoupling.
+
+	public bool locked;
+
+	static public MetaSet AreAdSqsMetaSet(AdvancementSquare first, AdvancementSquare second)
+	{
+		return MetaSet.Different;
+	}
 
 	protected Vector3Int nullSquare = new Vector3Int(-1, -1, -1); // TODO: remove dup nullSquare, move up.
 }

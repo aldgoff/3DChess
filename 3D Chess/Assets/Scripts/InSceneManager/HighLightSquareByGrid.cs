@@ -24,9 +24,6 @@ public class HighLightSquareByGrid : MonoBehaviour
 	Vector3Int dstSquare;
 	bool haveRookAdvSq;
 
-	// Deprecated.
-	DemoRookAdvSq demoRAS;
-
 	private bool debug;
 
 	public void MouseBehaviorDropdownIndexChanged(int index)
@@ -46,10 +43,6 @@ public class HighLightSquareByGrid : MonoBehaviour
 
 		srcSquare = nullSquare;
 		dstSquare = nullSquare;
-
-		// Deprecated.
-		demoRAS = new DemoRookAdvSq();
-		demoRAS.InitPerimeters();
 	}
 
 	Vector3Int FindRaycastSquare(RaycastHit hit)
@@ -134,14 +127,14 @@ public class HighLightSquareByGrid : MonoBehaviour
 		case "Select Mouse Behavior":
 			break;
 		case "Source/Destination":
-			demoRAS.RookPlaneAdvancementSquare(chessBoard.squares);
+			SetSrcDstSquares();
 			break;
 
 		case "Highlight Planes on Mouseover":
 			HighlightPlanes();
 			break;
 		case "Animate Advancement Squares":
-			SetSrcDstSquares();
+			ManageAdvSqs();
 			break;
 
 		default:
@@ -150,7 +143,169 @@ public class HighLightSquareByGrid : MonoBehaviour
 		}
 	}
 
-	void SetSrcDstSquares()
+	/* Logic for creating/showing/changing/clearing advancement squares:
+	 * Filtered by which planes are selected (rook, bishop, duke, queen, etc.).
+	 * 
+	 * With srcSq on board:
+	 *   Fresh dstSq makes advSq.
+	 *   Toggle clears advSq.
+	 *   Overriding srcSq locks the advancement square - keeps it on the board.
+	 *   Move has two possibilities:
+	 *     If in different advSq, clear the previous, and show the new one.
+	 *     If in same advSq, add perimeters or clear them as appropriate.
+	 *
+	 * With dstSq on board:
+	 *   Fresh srcSq makes advSq.
+	 *   Toggle clears advSq.
+	 *   Overriding dstSq locks the advancement square - keeps it on the board.
+	 *   Move has two possibilities:
+	 *     If in different advSq, clear previous and show new one.
+	 *     If in same advSq, shift, shrink or grow advancement square, but no perimeter by perimeter presentation.
+	 *
+	 * TODO: Replace prints with actual advSq constructions and changes.
+	 */
+
+	bool lastAdvSqLocked;
+	void SetSrcDstSquares() // This looks correct, complete & concise 9/28/19.
+	{
+		Color srcColor = Color.yellow;
+		Color dstColor = Color.magenta;
+
+		Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition); // From camera to mouse.
+		RaycastHit hit;
+
+		if (Physics.Raycast(ray, out hit)) { // Ray hit a GameObject (square, piece, etc.).
+			Vector3Int raycastSquare = FindRaycastSquare(hit);
+
+			// Click marks source square.
+			if (Input.GetMouseButtonUp(1)) {
+				if (srcSquare == nullSquare) {              // Fresh srcSq.
+					if (dstSquare == raycastSquare) {       // Overrides dstSq.
+						dstSquare = Unhighlight(raycastSquare);
+						print("Overrides dstSq.");
+					}
+					srcSquare = Highlight(raycastSquare, srcColor);
+					if (dstSquare != nullSquare) {
+						print("Show new advSq.");
+					}
+					lastAdvSqLocked = false;
+				} else if (raycastSquare == srcSquare) {    // Toggle srcSq.
+					srcSquare = Unhighlight(srcSquare);
+					if (dstSquare != nullSquare) {
+						print("Revert last advSq.");
+					}
+				} else {                                    // Move srcSq.
+					srcSquare = Unhighlight(srcSquare);
+					if (dstSquare == raycastSquare) {       // Lock advSq (srcSq ontop of dstSq).
+						print("Lock last advSq.");
+						lastAdvSqLocked = true;
+					} else {
+						srcSquare = Highlight(raycastSquare, srcColor);
+						if (dstSquare != nullSquare) {
+							// Mock code until can return a new advancement square:
+							AdvancementSquare first = new AdvancementSquare();
+							AdvancementSquare second = new AdvancementSquare();
+
+							// Mock code, is only returning 'Different':
+							MetaSet metaSet = AdvancementSquare.AreAdSqsMetaSet(first, second);
+							if (metaSet == MetaSet.SubSet || metaSet == MetaSet.SuperSet || metaSet == MetaSet.ShiftSet) {
+								print("Resize or shift advSq");
+							} else if (metaSet == MetaSet.Null) {
+								if (!lastAdvSqLocked) {
+									print("Clear last advSq.");
+								}
+							} else if (metaSet == MetaSet.Different) {
+								if (!lastAdvSqLocked) {
+									print("Clear last advSq.");
+								}
+								print("Show next advSq.");
+								lastAdvSqLocked = false;
+							} else if (metaSet == MetaSet.Identical) {
+								print("Identical should never happen - Do nothing.");
+							}
+						}
+					}
+				}
+			}
+
+			// Click marks destination square.
+			if (Input.GetMouseButtonUp(0)) {
+				if (dstSquare == nullSquare) {              // Fresh dstSq.
+					if (srcSquare == raycastSquare) {		// Overrides srcSq.
+						srcSquare = Unhighlight(srcSquare);
+						print("Overrides srcSq.");
+					}
+					dstSquare = Highlight(raycastSquare, dstColor);
+					if (srcSquare != nullSquare) {
+						print("Show new advSq.");
+						//advSq = CreateAdvSq(srcSquare, dstSquare);
+					}
+					lastAdvSqLocked = false;
+				}
+				else if (raycastSquare == dstSquare) {		// Toggle dstSq.
+					dstSquare = Unhighlight(dstSquare);
+					if (srcSquare != nullSquare) {
+						print("Revert last advSq.");
+					}
+				}
+				else {										// Move dstSq.
+					dstSquare = Unhighlight(dstSquare);
+					if (srcSquare == raycastSquare) {		// Lock advSq (dstSq ontop of srcSq).
+						print("Lock last advSq.");
+						lastAdvSqLocked = true;
+					} else {
+						dstSquare = Highlight(raycastSquare, dstColor);
+						if (srcSquare != nullSquare) {
+							// Mock code until can return a new advancement square:
+							AdvancementSquare first = new AdvancementSquare();
+							AdvancementSquare second = new AdvancementSquare();
+
+							// Mock code, is only returning 'Different':
+							MetaSet metaSet = AdvancementSquare.AreAdSqsMetaSet(first, second);
+							if (metaSet == MetaSet.SubSet || metaSet == MetaSet.SuperSet) {
+								print("Resize advSq (extend or contract perimeters).");
+							} else if (metaSet == MetaSet.Null) {
+								if (!lastAdvSqLocked) {
+									print("Clear last advSq.");
+								}
+							} else if (metaSet == MetaSet.Different) {
+								if (!lastAdvSqLocked) {
+									print("Clear last advSq.");
+								}
+								print("Show next advSq.");
+								lastAdvSqLocked = false;
+							} else if (metaSet == MetaSet.Identical) {
+								print("Do nothing.");
+							}
+						}
+					}
+				}
+			}
+		} else { // Clear src & dst squares off the board.
+			if (Input.GetMouseButtonUp(1)) {
+				if (srcSquare != nullSquare) {
+					srcSquare = Unhighlight(srcSquare);
+					print("Lock last advSq.");
+					lastAdvSqLocked = true;
+				}
+				if (srcSquare == nullSquare && dstSquare == nullSquare) {
+					print("--- Clear all advancement squares off the board.");
+				}
+			}
+			if (Input.GetMouseButtonUp(0)) {
+				if (dstSquare != nullSquare) {
+					dstSquare = Unhighlight(dstSquare);
+					print("Lock last advSq.");
+					lastAdvSqLocked = true;
+				}
+				if (srcSquare == nullSquare && dstSquare == nullSquare) {
+					print("--- Clear all advancement squares off the board.");
+				}
+			}
+		}
+	}
+
+	void ManageAdvSqs()
 	{
 		Color srcColor = Color.yellow;
 		Color dstColor = Color.magenta;
@@ -177,9 +332,9 @@ public class HighLightSquareByGrid : MonoBehaviour
 				} else if (srcSquare != nullSquare && dstSquare == nullSquare) {
 					if (srcSquare == raycastSquare) {							// Toggle srcSq off.
 						print("Clear current srcSq - " + srcSquare);
-						if (planesSelection.rookPlanes.Contains(plane)) {
-							highlightRookPlanes.HighlightSquare(srcSquare, false, "Point");
-						}
+						//if (planesSelection.rookPlanes.Contains(plane)) {
+						//	highlightRookPlanes.HighlightSquare(srcSquare, false, "Point");
+						//}
 						//Unhighlight(srcSquare);
 						srcSquare = nullSquare;
 					}
@@ -246,7 +401,7 @@ public class HighLightSquareByGrid : MonoBehaviour
 							print("Fresh dstSquare");
 							dstSquare = Highlight(raycastSquare, dstColor);
 							if (planesSelection.rookPlanes.Contains(plane)) {
-								if(highlightRookPlanes.AdvSq(srcSquare, dstSquare)) {
+								if (highlightRookPlanes.AdvSq(srcSquare, dstSquare)) {
 									StartCoroutine(highlightRookPlanes.ShowAdvSqByPerimeter());
 									haveRookAdvSq = true;
 								}
@@ -260,8 +415,7 @@ public class HighLightSquareByGrid : MonoBehaviour
 								if (planesSelection.rookPlanes.Contains(plane)) {
 									if (haveRookAdvSq) {
 										highlightRookPlanes.HighlightSquare(dstSquare, false);
-									}
-									else {
+									} else {
 										dstSquare = Unhighlight(dstSquare);
 									}
 								}
@@ -311,8 +465,8 @@ public class HighLightSquareByGrid : MonoBehaviour
 		HighlightSquareByRayCasting sqScriptClass;
 
 		sqScriptClass = chessBoard.squares[sq.x, sq.y, sq.z].GetComponent<HighlightSquareByRayCasting>();
-		Material[] theMat = sqScriptClass.GetComponent<MeshRenderer>().materials;
-		theMat[0].SetColor("_Color", color);
+		Material mat = sqScriptClass.GetComponent<MeshRenderer>().material;
+		mat.SetColor("_Color", color);
 
 		return sq;
 	}
@@ -322,8 +476,8 @@ public class HighLightSquareByGrid : MonoBehaviour
 		HighlightSquareByRayCasting sqScriptClass;
 
 		sqScriptClass = chessBoard.squares[sq.x, sq.y, sq.z].GetComponent<HighlightSquareByRayCasting>();
-		Material[] theMat = sqScriptClass.GetComponent<MeshRenderer>().materials;
-		theMat[0].SetColor("_Color", sqScriptClass.baseColor);
+		Material mat = sqScriptClass.GetComponent<MeshRenderer>().material;
+		mat.SetColor("_Color", sqScriptClass.baseColor);
 
 		return nullSquare;
 	}
@@ -403,127 +557,3 @@ public class HighLightSquareByGrid : MonoBehaviour
 		}
 	}
 }
-
-// Deprecated.
-// This is a demo only - very hard coded, mono color on both black & white squares.
-// One horizontal rook advancement square on level 2.
-public class DemoRookAdvSq
-{
-	Vector2Int[] perimeter0 = new Vector2Int[1];
-	Vector2Int[] perimeter1 = new Vector2Int[3];
-	Vector2Int[] perimeter2 = new Vector2Int[5];
-	Vector2Int[] perimeter3 = new Vector2Int[7];
-	Vector2Int[] perimeter4 = new Vector2Int[9];
-	Vector2Int[] perimeter5 = new Vector2Int[11];
-	Vector2Int[] perimeter6 = new Vector2Int[13];
-	Vector2Int[] perimeter7 = new Vector2Int[15];
-
-	public void InitPerimeters()
-	{
-		perimeter0[0] = new Vector2Int(0, 0);
-
-		for (int i = 0; i < 1; i++) {
-			perimeter1[i] = new Vector2Int(1, i);
-			perimeter1[1 * 2 - i] = new Vector2Int(i, 1);
-		}
-		perimeter1[1] = new Vector2Int(1, 1);
-
-		for (int i = 0; i < 2; i++) {
-			perimeter2[i] = new Vector2Int(2, i);
-			perimeter2[2 * 2 - i] = new Vector2Int(i, 2);
-		}
-		perimeter2[2] = new Vector2Int(2, 2);
-
-		for (int i = 0; i < 3; i++) {
-			perimeter3[i] = new Vector2Int(3, i);
-			perimeter3[2 * 3 - i] = new Vector2Int(i, 3);
-		}
-		perimeter3[3] = new Vector2Int(3, 3);
-
-		for (int i = 0; i < 4; i++) {
-			perimeter4[i] = new Vector2Int(4, i);
-			perimeter4[2 * 4 - i] = new Vector2Int(i, 4);
-		}
-		perimeter4[4] = new Vector2Int(4, 4);
-
-		for (int i = 0; i < 5; i++) {
-			perimeter5[i] = new Vector2Int(5, i);
-			perimeter5[2 * 5 - i] = new Vector2Int(i, 5);
-		}
-		perimeter5[5] = new Vector2Int(5, 5);
-
-		for (int i = 0; i < 6; i++) {
-			perimeter6[i] = new Vector2Int(6, i);
-			perimeter6[2 * 6 - i] = new Vector2Int(i, 6);
-		}
-		perimeter6[6] = new Vector2Int(6, 6);
-
-		for (int i = 0; i < 7; i++) {
-			perimeter7[i] = new Vector2Int(7, i);
-			perimeter7[2 * 7 - i] = new Vector2Int(i, 7);
-		}
-		perimeter7[7] = new Vector2Int(7, 7);
-	}
-
-	int frameDelay = 0;
-	int perimeter = 0;
-
-	Color color = Color.red;
-
-	public void RookPlaneAdvancementSquare(GameObject[,,] squares)
-	{
-		MeshRenderer theMesh;
-		Material[] theMat;
-
-		if (frameDelay == 0) {
-			frameDelay = 20;
-			if (perimeter == 0) {
-				theMesh = squares[perimeter0[0][0], perimeter0[0][1], 2].GetComponent<MeshRenderer>();
-				theMat = theMesh.materials;
-				theMat[0].SetColor("_Color", color);
-			} else if (perimeter == 1) {
-				for (int i = 0; i < perimeter1.Length; i++) {
-					theMesh = squares[perimeter1[i][0], perimeter1[i][1], 2].GetComponent<MeshRenderer>();
-					theMesh.materials[0].SetColor("_Color", color);
-				}
-			} else if (perimeter == 2) {
-				for (int i = 0; i < perimeter2.Length; i++) {
-					theMesh = squares[perimeter2[i][0], perimeter2[i][1], 2].GetComponent<MeshRenderer>();
-					theMesh.materials[0].SetColor("_Color", color);
-				}
-			} else if (perimeter == 3) {
-				for (int i = 0; i < perimeter3.Length; i++) {
-					theMesh = squares[perimeter3[i][0], perimeter3[i][1], 2].GetComponent<MeshRenderer>();
-					theMesh.materials[0].SetColor("_Color", color);
-				}
-			} else if (perimeter == 4) {
-				for (int i = 0; i < perimeter4.Length; i++) {
-					theMesh = squares[perimeter4[i][0], perimeter4[i][1], 2].GetComponent<MeshRenderer>();
-					theMesh.materials[0].SetColor("_Color", color);
-				}
-			} else if (perimeter == 5) {
-				for (int i = 0; i < perimeter5.Length; i++) {
-					theMesh = squares[perimeter5[i][0], perimeter5[i][1], 2].GetComponent<MeshRenderer>();
-					theMesh.materials[0].SetColor("_Color", color);
-				}
-			} else if (perimeter == 6) {
-				for (int i = 0; i < perimeter6.Length; i++) {
-					theMesh = squares[perimeter6[i][0], perimeter6[i][1], 2].GetComponent<MeshRenderer>();
-					theMesh.materials[0].SetColor("_Color", color);
-				}
-			} else if (perimeter == 7) {
-				for (int i = 0; i < perimeter7.Length; i++) {
-					theMesh = squares[perimeter7[i][0], perimeter7[i][1], 2].GetComponent<MeshRenderer>();
-					theMesh.materials[0].SetColor("_Color", color);
-				}
-			} else if (perimeter == 8) {
-				color = Color.clear;
-				perimeter = -1;
-			}
-			perimeter++;
-		} else {
-			frameDelay--;
-		}
-	}
-}
-
