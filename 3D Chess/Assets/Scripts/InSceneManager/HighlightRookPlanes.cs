@@ -47,8 +47,9 @@ public class HighlightRookPlanes : MonoBehaviour
 	}
 
 	// Partial public interface for highlighting rook advancement squares:
-	public IEnumerator ClearAdvSqByPerimeter()
+	public IEnumerator ClearAdvSqByPerimeter(AdvancementSquare advSq)
 	{
+		UnHighlightSquare(advSq.dstSquare);
 		for (int perimeter = advSq.perimeters.Count-1; perimeter >= 0; perimeter--) {
 			if (true) print("^^^ Coroutine: clear perimeter " + (perimeter + 1));
 
@@ -67,7 +68,7 @@ public class HighlightRookPlanes : MonoBehaviour
 		}
 	}
 
-	public IEnumerator ShowAdvSqByPerimeter()
+	public IEnumerator ShowAdvSqByPerimeter(AdvancementSquare advSq)
 	{
 		for (int perimeter = 0; perimeter <= advSq.perimeters.Count; perimeter++) {
 			if(debug) print("^^^ Coroutine: show perimeter " + (perimeter + 1));
@@ -103,14 +104,84 @@ public class HighlightRookPlanes : MonoBehaviour
 					chessBoard.squares[sq.x, sq.y, sq.z].transform.rotation = new Quaternion(4.0f, yPos, 0.0f, xPos); // Rotate.
 
 					// Highlight next square as quad or line.
-					bool line = i == 0 || i == advSq.perimeters[currPerimeter].Length - 1;
-					HighlightSquare(sq, line);
+					//bool line = i == 0 || i == advSq.perimeters[currPerimeter].Length - 1;
+					//HighlightSquare(sq, line);
+					HighlightSquare(sq.x, sq.y, sq.z, DetermineCellToSource(srcSquare.x, sq.x, srcSquare.y, sq.y, rookColor));
+
 				}
 			}
 
 			yield return new WaitForSeconds(0.2f); // TODO: put advSqByPerimeter speed under player control.
 		}
 	}
+
+	// TODO: Lots of duplication, need helper methods.
+	public IEnumerator ClearShowAdvSqsByPerimeter(AdvancementSquare advSq1, AdvancementSquare advSq2)
+	{
+		// Clear first advSq1.
+		for (int perimeter = advSq1.perimeters.Count - 1; perimeter >= 0; perimeter--) {
+			if (true) print("^^^ Coroutine: clear perimeter " + (perimeter + 1));
+
+			for (int i = 0; i < advSq1.perimeters[perimeter].Length; i++) {
+				Vector3Int sq = advSq1.perimeters[perimeter][i];
+
+				// Skip squares off the board.
+				if (IsOffBoard(sq, chessBoard.size)) {
+					continue;
+				}
+
+				UnHighlightSquare(sq);
+			}
+
+			yield return new WaitForSeconds(0.1f); // TODO: put advSqByPerimeter speed under player control.
+		}
+
+		// Show 2nd advSq1.
+		for (int perimeter = 0; perimeter <= advSq2.perimeters.Count; perimeter++) {
+			if (debug) print("^^^ Coroutine: show perimeter " + (perimeter + 1));
+
+			int prevPerimeter = perimeter - 1;
+			int currPerimeter = perimeter;
+
+			// Flatten ripple tilt of previous perimeter.
+			if (perimeter > 0) {
+				for (int i = 0; i < advSq2.perimeters[prevPerimeter].Length; i++) {
+					Vector3Int sq = advSq2.perimeters[prevPerimeter][i];
+
+					// Skip squares off the board.
+					if (IsOffBoard(sq, chessBoard.size)) {
+						continue;
+					}
+					chessBoard.squares[sq.x, sq.y, sq.z].transform.rotation = new Quaternion(0f, 0.0f, 0.0f, 0.0f); // Flatten.
+				}
+			}
+
+			// Highlight and ripple tilt current perimeter.
+			if (perimeter < advSq2.perimeters.Count) {
+				float xPos = (dstSquare.x > srcSquare.x) ? 0.1f : -0.1f;
+				float yPos = (dstSquare.y > srcSquare.y) ? 0.1f : -0.1f;
+
+				for (int i = 0; i < advSq2.perimeters[currPerimeter].Length; i++) {
+					Vector3Int sq = advSq2.perimeters[currPerimeter][i];
+
+					// Skip squares off the board.
+					if (IsOffBoard(sq, chessBoard.size)) {
+						continue;
+					}
+					chessBoard.squares[sq.x, sq.y, sq.z].transform.rotation = new Quaternion(4.0f, yPos, 0.0f, xPos); // Rotate.
+
+					// Highlight next square as quad or line.
+					//bool line = i == 0 || i == advSq2.perimeters[currPerimeter].Length - 1;
+					//HighlightSquare(sq, line);
+					HighlightSquare(sq.x, sq.y, sq.z, DetermineCellToSource(srcSquare.x, sq.x, srcSquare.y, sq.y, rookColor));
+				}
+			}
+
+			yield return new WaitForSeconds(0.2f); // TODO: put advSqByPerimeter speed under player control.
+		}
+	}
+
+
 
 	// Private members and methods:
 	private HighlightSquareByRayCasting sqScriptClass;
@@ -216,8 +287,6 @@ public class HighlightRookPlanes : MonoBehaviour
 	 * TBD
 	 */
 
-	private AdvancementSquare advSq;
-
 	private bool IsOffBoard(Vector3Int sq, Vector3Int size)
 	{
 		// Skip squares off the board.
@@ -257,9 +326,10 @@ public class HighlightRookPlanes : MonoBehaviour
 	}
 
 	// Called by HighLightSquareByGrid.SetSrcDstSquares().
-	public bool AdvSq(Vector3Int srcSquare, Vector3Int dstSquare)
+	// TODO: Change to return List<>.
+	public AdvancementSquare AdvSq(Vector3Int srcSquare, Vector3Int dstSquare)
 	{
-		bool validAdvSq = true;
+		List<AdvancementSquare> advSqs = new List<AdvancementSquare>();
 
 		this.srcSquare = srcSquare;
 		this.dstSquare = dstSquare;
@@ -271,19 +341,37 @@ public class HighlightRookPlanes : MonoBehaviour
 
 		if ((sameX && sameY) || (sameX && sameZ) || (sameY && sameZ)) {
 			print("Linear rook move.");
+			AdvancementSquare advSqR1;
+			AdvancementSquare advSqR2 = null;
 			if (sameX && sameY) {
-				print("Rook vertical linear move, Z varies.");
+				advSqR1 = new RookAdvSqRect("RightVertical", srcSquare, dstSquare);
+				print("Rook right vertical linear move, Y varies; number of perimeters = " + advSqR1.Perims);
+				//advSqR2 = new RookAdvSqRect("LeftVertical", srcSquare, dstSquare);
+				//print("Rook left vertical linear move, Z varies; number of perimeters = " + advSqR2.Perims);
 			}
 			else if (sameX && sameZ) {
-				print("Rook horizontal linear move, Y varies.");
+				advSqR1 = new RookAdvSqRect("Horizontal", srcSquare, dstSquare);
+				print("Rook horizontal linear move, Y varies; number of perimeters = " + advSqR1.Perims);
+				//advSqR2 = new RookAdvSqRect("RightVertical", srcSquare, dstSquare);
+				//print("Rook right vertical linear move, Y varies; number of perimeters = " + advSqR2.Perims);
 			}
 			else if(sameY && sameZ) {
-				print("Rook horizontal linear move, X varies.");
+				advSqR1 = new RookAdvSqRect("LeftVertical", srcSquare, dstSquare);
+				print("Rook left vertical linear move, X varies; number of perimeters = " + advSqR1.Perims);
+				//advSqR2 = new RookAdvSqRect("Horizontal", srcSquare, dstSquare);
+				//print("Rook horizontal linear move, X varies; number of perimeters = " + advSqR2.Perims);
 			}
-			//print("Number of perimeters = " + advSq.Perims);
+			else {
+				advSqR1 = null;
+				advSqR2 = null;
+			}
+			if (advSqR1 != null) advSqs.Add(advSqR1);
+			if (advSqR2 != null) advSqs.Add(advSqR2);
+			return advSqR1;
 		}
 		else if (sameX || sameY || sameZ) {
 			print("Quadrant rook move.");
+			AdvancementSquare advSq;
 			if (sameZ) {
 				advSq = new RookAdvSqQuad("Horizontal", srcSquare, dstSquare);
 				print("Rook Horizontal plane, advancement square number of perimeters = " + advSq.Perims);
@@ -296,11 +384,15 @@ public class HighlightRookPlanes : MonoBehaviour
 				advSq = new RookAdvSqQuad("LeftVertical", srcSquare, dstSquare);
 				print("Rook LeftVertical plane, advancement square number of perimeters = " + advSq.Perims);
 			}
+			else {
+				advSq = null;
+			}
+			if (advSq != null) advSqs.Add(advSq);
+			return advSq;
 		} else {
 			print("Not in a rook plane.");
-			validAdvSq = false;
+			//validAdvSq = false;
+			return null;
 		}
-
-		return validAdvSq;
 	}
 }
