@@ -26,6 +26,8 @@ public class HighLightSquareByGrid : MonoBehaviour
 
 	private bool debug;
 
+	List<AdvancementSquare> advSqs;
+
 	public void MouseBehaviorDropdownIndexChanged(int index)
 	{
 		mouseBehaviorIndex = index; // TODO: So we can see in Inspector at runtime - not working.
@@ -43,6 +45,10 @@ public class HighLightSquareByGrid : MonoBehaviour
 
 		srcSquare = nullSquare;
 		dstSquare = nullSquare;
+
+		advSqs = new List<AdvancementSquare>();
+
+		print("  Size of advSqs = " + advSqs.Count);
 	}
 
 	Vector3Int FindRaycastSquare(RaycastHit hit)
@@ -165,8 +171,40 @@ public class HighLightSquareByGrid : MonoBehaviour
 	 * TODO: Replace prints with actual advSq constructions and changes.
 	 */
 
+	AdvancementSquare CreateAdvSq(Vector3Int srcSq, Vector3Int dstSq)
+	{
+		AdvancementSquare advSq = null;
+		List<AdvancementSquare> advSqs = new List<AdvancementSquare>();
+
+		string plane = planesSelection.selectedPlane.text;
+
+		if (planesSelection.rookPlanes.Contains(plane)) {
+			if ((advSq = highlightRookPlanes.AdvSq(srcSq, dstSq)) != null) {
+				List<AdvancementSquare> testAdvSqs = new List<AdvancementSquare>();
+				testAdvSqs.Add(advSq);
+				testAdvSqs.Add(advSq);
+				advSqs.AddRange(testAdvSqs);
+			}
+		}
+
+		return advSq;
+	}
+
+	// Call as StartCoroutine(ClearAllAdvSqsInReverseOrder()).
+	IEnumerator ClearAllAdvSqsInReverseOrder()
+	{
+		for (int i = advSqs.Count - 1; i >= 0; i--) {
+			StartCoroutine(highlightRookPlanes.ClearAdvSqByPerimeter(advSqs[i]));
+			yield return new WaitForSeconds(0.5f); // TODO: put advSqByPerimeter speed under player control.
+
+			advSqs.RemoveAt(i);
+			print("  Size of advSqs = " + advSqs.Count);
+		}
+
+	}
+
 	bool lastAdvSqLocked;
-	void SetSrcDstSquares() // This looks correct, complete & concise 9/28/19.
+	void SetSrcDstSquares() // Src/dst looks correct, complete & concise 9/28/19, but advSqs are wip.
 	{
 		Color srcColor = Color.yellow;
 		Color dstColor = Color.magenta;
@@ -238,7 +276,12 @@ public class HighLightSquareByGrid : MonoBehaviour
 					dstSquare = Highlight(raycastSquare, dstColor);
 					if (srcSquare != nullSquare) {
 						print("Show new advSq.");
-						//advSq = CreateAdvSq(srcSquare, dstSquare);
+						AdvancementSquare advSq = CreateAdvSq(srcSquare, dstSquare);
+						if (advSq != null) {
+							advSqs.Add(advSq);
+							StartCoroutine(highlightRookPlanes.ShowAdvSqByPerimeter(advSq));
+						}
+						print("  Size of advSqs = " + advSqs.Count);
 					}
 					lastAdvSqLocked = false;
 				}
@@ -246,12 +289,18 @@ public class HighLightSquareByGrid : MonoBehaviour
 					dstSquare = Unhighlight(dstSquare);
 					if (srcSquare != nullSquare) {
 						print("Revert last advSq.");
+						int prevAdvSqIndex = advSqs.Count - 1;
+						StartCoroutine(highlightRookPlanes.ClearAdvSqByPerimeter(advSqs[prevAdvSqIndex]));
+						advSqs.RemoveAt(prevAdvSqIndex);
 					}
 				}
 				else {										// Move dstSq.
-					dstSquare = Unhighlight(dstSquare);
+					Unhighlight(dstSquare);
 					if (srcSquare == raycastSquare) {		// Lock advSq (dstSq ontop of srcSq).
 						print("Lock last advSq.");
+						bool line = false;
+						highlightRookPlanes.HighlightSquare(dstSquare, line);
+						dstSquare = nullSquare;
 						lastAdvSqLocked = true;
 					} else {
 						dstSquare = Highlight(raycastSquare, dstColor);
@@ -269,11 +318,21 @@ public class HighLightSquareByGrid : MonoBehaviour
 									print("Clear last advSq.");
 								}
 							} else if (metaSet == MetaSet.Different) {
-								if (!lastAdvSqLocked) {
-									print("Clear last advSq.");
+								int prevAdvSqIndex = advSqs.Count - 1;
+								AdvancementSquare advSq1 = advSqs[prevAdvSqIndex];
+								AdvancementSquare advSq2 = CreateAdvSq(srcSquare, dstSquare);
+								if (advSq2 != null) {
+									advSqs.Add(advSq2);
 								}
-								print("Show next advSq.");
-								lastAdvSqLocked = false;
+								if (lastAdvSqLocked) {
+									print("Show next advSq.");
+									StartCoroutine(highlightRookPlanes.ShowAdvSqByPerimeter(advSq2));
+								} else {
+									print("Clear previous advSq and show next advSq.");
+									StartCoroutine(highlightRookPlanes.ClearShowAdvSqsByPerimeter(advSq1, advSq2));
+									advSqs.RemoveAt(prevAdvSqIndex);
+									lastAdvSqLocked = false;
+								}
 							} else if (metaSet == MetaSet.Identical) {
 								print("Do nothing.");
 							}
@@ -290,6 +349,7 @@ public class HighLightSquareByGrid : MonoBehaviour
 				}
 				if (srcSquare == nullSquare && dstSquare == nullSquare) {
 					print("--- Clear all advancement squares off the board.");
+					StartCoroutine(ClearAllAdvSqsInReverseOrder());
 				}
 			}
 			if (Input.GetMouseButtonUp(0)) {
@@ -401,8 +461,8 @@ public class HighLightSquareByGrid : MonoBehaviour
 							print("Fresh dstSquare");
 							dstSquare = Highlight(raycastSquare, dstColor);
 							if (planesSelection.rookPlanes.Contains(plane)) {
-								if (highlightRookPlanes.AdvSq(srcSquare, dstSquare)) {
-									StartCoroutine(highlightRookPlanes.ShowAdvSqByPerimeter());
+								if (highlightRookPlanes.AdvSq(srcSquare, dstSquare) != null) {
+									//StartCoroutine(highlightRookPlanes.ShowAdvSqByPerimeter());
 									haveRookAdvSq = true;
 								}
 							}
@@ -424,13 +484,13 @@ public class HighLightSquareByGrid : MonoBehaviour
 								print("Move dstSquare");
 								Unhighlight(dstSquare);
 								if (planesSelection.rookPlanes.Contains(plane)) {
-									StartCoroutine(highlightRookPlanes.ClearAdvSqByPerimeter());
+									//StartCoroutine(highlightRookPlanes.ClearAdvSqByPerimeter());
 									haveRookAdvSq = false;
 								}
 								dstSquare = Highlight(raycastSquare, dstColor);
 								if (planesSelection.rookPlanes.Contains(plane)) {
-									if (highlightRookPlanes.AdvSq(srcSquare, dstSquare)) {
-										StartCoroutine(highlightRookPlanes.ShowAdvSqByPerimeter());
+									if (highlightRookPlanes.AdvSq(srcSquare, dstSquare) != null) {
+										//StartCoroutine(highlightRookPlanes.ShowAdvSqByPerimeter());
 										haveRookAdvSq = true;
 									}
 								}
@@ -453,7 +513,7 @@ public class HighLightSquareByGrid : MonoBehaviour
 					dstSquare = Unhighlight(dstSquare);
 				}
 				if (haveRookAdvSq) {
-					StartCoroutine(highlightRookPlanes.ClearAdvSqByPerimeter());
+ 
 					haveRookAdvSq = false;
 				}
 			}
