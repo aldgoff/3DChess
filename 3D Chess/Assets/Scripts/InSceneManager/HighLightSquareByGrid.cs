@@ -340,7 +340,8 @@ public class HighLightSquareByGrid : MonoBehaviour
 					}
 				}
 			}
-		} else { // Clear src & dst squares off the board.
+		}
+		else { // Clear src & dst squares off the board.
 			if (Input.GetMouseButtonUp(1)) {
 				if (srcSquare != nullSquare) {
 					srcSquare = Unhighlight(srcSquare);
