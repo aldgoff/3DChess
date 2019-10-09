@@ -10,7 +10,7 @@ public class HighlightSquareByRayCasting : MonoBehaviour
 
     // Debug info.
     Vector3 target;
-    bool debug = false;
+    bool debug = true;
 
     // Material list & square color.
     Material[] mat;
@@ -73,7 +73,7 @@ public class HighlightSquareByRayCasting : MonoBehaviour
                 {
                     mat[0].SetColor("_Color", Color.yellow); // Highlight it.
                     isHighlighted = true;
-                    if (debug) print("Highlight square at " + target);
+                    if (debug) print("Highlight " + mat[0].name + " square at " + target);
                 }
             }
             else if (isHighlighted) // Mouse off this square, unhighlight.

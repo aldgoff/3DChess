@@ -37,9 +37,11 @@ public class ChessBoard3D : MonoBehaviour
 
     // Assumes square size is 1.0 or less; typically 0.90.
     public GameObject whiteSquare;
-    public GameObject blackSquare;
+	public GameObject blackSquare;
+	//public GameObject cell;
 
-    public GameObject[,,] squares;
+	public GameObject[,,] squares;
+	public Cell[,,] cells;
 
 	// Set from ChessBoardProperties.
 	private int boardVerticalSep;
@@ -68,6 +70,7 @@ public class ChessBoard3D : MonoBehaviour
 		print("ChessBoard3D.CreateStandardBoard() of " + size.x + "x" + size.y + "x" + size.z + " with level sep " + boardVerticalSep);
 
 		squares = new GameObject[size.x, size.y, size.z];
+		cells = new Cell[size.x, size.y, size.z];
 
 		this.size = properties.size = size;
 		properties.locWhiteK11sq = locWhiteK11sq;
@@ -91,6 +94,7 @@ public class ChessBoard3D : MonoBehaviour
 						squares[i, j, k] = Instantiate(blackSquare);
 					}
 					squares[i, j, k].transform.position = new Vector3(boardYedges[0] + squareSep / 2 + j, boardZedges[0] + k * boardVerticalSep, boardXedges[0] + squareSep / 2 + i);
+					cells[i, j, k] = new Cell();
 
 					// Alternate levels for black/grey squares.
 					if (k % 2 == (firstSqIsWhite ? 0 : 1) && (i + j) % 2 == 1) {
