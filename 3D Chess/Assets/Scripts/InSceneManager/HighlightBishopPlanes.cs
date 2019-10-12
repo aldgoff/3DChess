@@ -15,9 +15,6 @@ public class HighlightBishopPlanes : MonoBehaviour
 
 	void Update() { }
 
-
-	private Material[] theMat;
-	private HighlightSquareByRayCasting sqScriptClass;
 	private Color bishopColor = Color.green;
 
 	static private Color BishopQuadWhite = Color.Lerp(Color.green, Color.white, 0.3f);		// Quad.
@@ -87,21 +84,21 @@ public class HighlightBishopPlanes : MonoBehaviour
 
 				if (OffTheBoard(x, y, z)) continue;
 
-				theMat = chessBoard.squares[x, y, z].GetComponent<MeshRenderer>().materials;
-				sqScriptClass = chessBoard.squares[x, y, z].GetComponent<HighlightSquareByRayCasting>();
+				Cell cell = chessBoard.cells[x, y, z];
+
 				if (color == Color.clear) {
-					theMat[0].SetColor("_Color", sqScriptClass.baseColor);
+					cell.UnhighlightCell();
 				} else {
 					if (square.x == x && square.y == y && square.z == z) {
-						bishopColor = (sqScriptClass.baseColor == Color.white) ? BishopPointWhite : BishopPointBlack; // Point.
+						bishopColor = (cell.baseColor == Color.white) ? BishopPointWhite : BishopPointBlack; // Point.
 					} else if ((z == square.z && (x - square.x) == -(y - square.y))		// Horizontal.
 							|| (x == square.x && (z - square.z) == -(y - square.y))		// RightVertical.
 							|| (y == square.y && (x - square.x) == -(z - square.z))) {	// LeftVertical.
-						bishopColor = (sqScriptClass.baseColor == Color.white) ? BishopLineWhite : BishopLineBlack;   // Line.
+						bishopColor = (cell.baseColor == Color.white) ? BishopLineWhite : BishopLineBlack;   // Line.
 					} else {
-						bishopColor = (sqScriptClass.baseColor == Color.white) ? BishopQuadWhite : BishopQuadBlack;   // Quadrant.
+						bishopColor = (cell.baseColor == Color.white) ? BishopQuadWhite : BishopQuadBlack;   // Quadrant.
 					}
-					theMat[0].SetColor("_Color", bishopColor);
+					cell.HighlightCell(bishopColor);
 				}
 			}
 		}
@@ -119,21 +116,21 @@ public class HighlightBishopPlanes : MonoBehaviour
 
 				if (OffTheBoard(x, y, z)) continue;
 
-				theMat = chessBoard.squares[x, y, z].GetComponent<MeshRenderer>().materials;
-				sqScriptClass = chessBoard.squares[x, y, z].GetComponent<HighlightSquareByRayCasting>();
+				Cell cell = chessBoard.cells[x, y, z];
+
 				if (color == Color.clear) {
-					theMat[0].SetColor("_Color", sqScriptClass.baseColor);
+					cell.UnhighlightCell();
 				} else {
 					if (square.x == x && square.y == y && square.z == z) {
-						bishopColor = (sqScriptClass.baseColor == Color.white) ? BishopPointWhite : BishopPointBlack; // Point.
+						bishopColor = (cell.baseColor == Color.white) ? BishopPointWhite : BishopPointBlack; // Point.
 					} else if ((z == square.z && (x - square.x) == -(y - square.y))     // Horizontal.
 							|| (x == square.x && (z - square.z) ==  (y - square.y))     // RightVertical.
 							|| (y == square.y && (x - square.x) ==  (z - square.z))) {  // LeftVertical.
-						bishopColor = (sqScriptClass.baseColor == Color.white) ? BishopLineWhite : BishopLineBlack;   // Line.
+						bishopColor = (cell.baseColor == Color.white) ? BishopLineWhite : BishopLineBlack;   // Line.
 					} else {
-						bishopColor = (sqScriptClass.baseColor == Color.white) ? BishopQuadWhite : BishopQuadBlack;   // Quadrant.
+						bishopColor = (cell.baseColor == Color.white) ? BishopQuadWhite : BishopQuadBlack;   // Quadrant.
 					}
-					theMat[0].SetColor("_Color", bishopColor);
+					cell.HighlightCell(bishopColor);
 				}
 			}
 		}
@@ -155,21 +152,21 @@ public class HighlightBishopPlanes : MonoBehaviour
 					continue;
 				}
 
-				theMat = chessBoard.squares[x, y, z].GetComponent<MeshRenderer>().materials;
-				sqScriptClass = chessBoard.squares[x, y, z].GetComponent<HighlightSquareByRayCasting>();
+				Cell cell = chessBoard.cells[x, y, z];
+
 				if (color == Color.clear) {
-					theMat[0].SetColor("_Color", sqScriptClass.baseColor);
+					cell.UnhighlightCell();
 				} else {
 					if (square.x == x && square.y == y && square.z == z) {
-						bishopColor = (sqScriptClass.baseColor == Color.white) ? BishopPointWhite : BishopPointBlack; // Point.
+						bishopColor = (cell.baseColor == Color.white) ? BishopPointWhite : BishopPointBlack; // Point.
 					} else if ((z == square.z && (x - square.x) ==  (y - square.y))		// Horizontal.
 						    || (x == square.x && (z - square.z) == -(y - square.y))		// RightVertical.
 						    || (y == square.y && (x - square.x) ==  (z - square.z))) {	// LeftVertical.
-						bishopColor = (sqScriptClass.baseColor == Color.white) ? BishopLineWhite : BishopLineBlack;   // Line.
+						bishopColor = (cell.baseColor == Color.white) ? BishopLineWhite : BishopLineBlack;   // Line.
 					} else {
-						bishopColor = (sqScriptClass.baseColor == Color.white) ? BishopQuadWhite : BishopQuadBlack;   // Quadrant.
+						bishopColor = (cell.baseColor == Color.white) ? BishopQuadWhite : BishopQuadBlack;   // Quadrant.
 					}
-					theMat[0].SetColor("_Color", bishopColor);
+					cell.HighlightCell(bishopColor);
 				}
 			}
 		}
@@ -189,21 +186,21 @@ public class HighlightBishopPlanes : MonoBehaviour
 
 				if (OffTheBoard(x, y, z)) continue;
 
-				theMat = chessBoard.squares[x, y, z].GetComponent<MeshRenderer>().materials;
-				sqScriptClass = chessBoard.squares[x, y, z].GetComponent<HighlightSquareByRayCasting>();
+				Cell cell = chessBoard.cells[x, y, z];
+
 				if (color == Color.clear) {
-					theMat[0].SetColor("_Color", sqScriptClass.baseColor);
+					cell.UnhighlightCell();
 				} else {
 					if (square.x == x && square.y == y && square.z == z) {
-						bishopColor = (sqScriptClass.baseColor == Color.white) ? BishopPointWhite : BishopPointBlack; // Point.
+						bishopColor = (cell.baseColor == Color.white) ? BishopPointWhite : BishopPointBlack; // Point.
 					} else if ((z == square.z && (x - square.x) ==  (y - square.y))		// Horizontal.
 							|| (x == square.x && (z - square.z) ==  (y - square.y))		// RightVertical.
 							|| (y == square.y && (x - square.x) == -(z - square.z))) {	// LeftVertical.
-						bishopColor = (sqScriptClass.baseColor == Color.white) ? BishopLineWhite : BishopLineBlack;   // Line.
+						bishopColor = (cell.baseColor == Color.white) ? BishopLineWhite : BishopLineBlack;   // Line.
 					} else {
-						bishopColor = (sqScriptClass.baseColor == Color.white) ? BishopQuadWhite : BishopQuadBlack;   // Quadrant.
+						bishopColor = (cell.baseColor == Color.white) ? BishopQuadWhite : BishopQuadBlack;   // Quadrant.
 					}
-					theMat[0].SetColor("_Color", bishopColor);
+					cell.HighlightCell(bishopColor);
 				}
 			}
 		}

@@ -4,9 +4,37 @@ using UnityEngine;
 
 public class Cell
 {
+	public GameObject square; // Can display a mesh material colar, respond to rayhits, and rotate.
+
+	private Material mat; // Material that covers the cube's (square) mesh.
+	public Color baseColor; // Typcially white or a gray, and maybe cyan for White K11 square.
+
 	private List<AdvancementSquare> advSqs = new List<AdvancementSquare>(); // TODO: Make ref to save memory.
 
-    public void Aquire(AdvancementSquare advSq) // Advancement square now covers cell - display proper color & tint.
+	public Cell(GameObject square)
+	{
+		this.square = square;
+		MeshRenderer aMesh = square.GetComponent<MeshRenderer>();
+		mat = aMesh.material;
+	}
+
+	public void SetBaseColor(Color color)
+	{
+		baseColor = color;
+		mat.SetColor("_Color", baseColor);
+	}
+
+	public void HighlightCell(Color color) // TODO: Rename to Highlight().
+	{
+		mat.SetColor("_Color", color);
+	}
+
+	public void UnhighlightCell() // TODO: Rename to Unhighlight().
+	{
+		mat.SetColor("_Color", baseColor);
+	}
+
+	public void Aquire(AdvancementSquare advSq) // Advancement square now covers cell - display proper color & tint.
     {
 		Debug.Log("Cell.Aquire() - add to list and display proper color & tint.");
 		advSqs.Add(advSq);

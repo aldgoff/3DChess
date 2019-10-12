@@ -30,7 +30,6 @@ using UnityEngine;
 
 public class ChessBoard3D : MonoBehaviour
 {
-
 	public ChessBoardProperties properties;
 
 	public Vector3Int size = new Vector3Int(0, 0, 0);
@@ -38,9 +37,7 @@ public class ChessBoard3D : MonoBehaviour
     // Assumes square size is 1.0 or less; typically 0.90.
     public GameObject whiteSquare;
 	public GameObject blackSquare;
-	//public GameObject cell;
 
-	public GameObject[,,] squares;
 	public Cell[,,] cells;
 
 	// Set from ChessBoardProperties.
@@ -69,7 +66,6 @@ public class ChessBoard3D : MonoBehaviour
 	{
 		print("ChessBoard3D.CreateStandardBoard() of " + size.x + "x" + size.y + "x" + size.z + " with level sep " + boardVerticalSep);
 
-		squares = new GameObject[size.x, size.y, size.z];
 		cells = new Cell[size.x, size.y, size.z];
 
 		this.size = properties.size = size;
@@ -82,24 +78,28 @@ public class ChessBoard3D : MonoBehaviour
 		Vector2 boardYedges = properties.boardYedges;
 		Vector2 boardZedges = properties.boardZedges;
 
+		Color DarkBlack = Color.Lerp(Color.gray, Color.black, 0.5f);
+
 		for (int k = 0; k < size.z; k++) // Build each level.
 		{
 			for (int j = 0; j < size.y; j++) // Build each column.
 			{
-				for (int i = 0; i < size.x; i++) // build each row.
+				for (int i = 0; i < size.x; i++) // Build each row.
 				{
 					if ((i + j + k) % 2 == (firstSqIsWhite ? 0 : 1)) {
-						squares[i, j, k] = Instantiate(whiteSquare);
+						cells[i, j, k] = new Cell(Instantiate(whiteSquare));
+						cells[i, j, k].SetBaseColor(Color.white);
 					} else {
-						squares[i, j, k] = Instantiate(blackSquare);
+						cells[i, j, k] = new Cell(Instantiate(blackSquare));
+						cells[i, j, k].SetBaseColor(DarkBlack);
 					}
-					squares[i, j, k].transform.position = new Vector3(boardYedges[0] + squareSep / 2 + j, boardZedges[0] + k * boardVerticalSep, boardXedges[0] + squareSep / 2 + i);
-					cells[i, j, k] = new Cell();
+					cells[i, j, k].square.transform.position = new Vector3(boardYedges[0] + squareSep / 2 + j, boardZedges[0] + k * boardVerticalSep, boardXedges[0] + squareSep / 2 + i);
 
-					// Alternate levels for black/grey squares.
-					if (k % 2 == (firstSqIsWhite ? 0 : 1) && (i + j) % 2 == 1) {
-						MeshRenderer aMesh = squares[i, j, k].GetComponent<MeshRenderer>();
-						aMesh.materials[0].SetColor("_Color", Color.gray);
+					// Alternate levels for black/grey cells.
+					if ((i + j) % 2 == 1) {
+						if (k % 2 == (firstSqIsWhite ? 0 : 1)) {
+							cells[i, j, k].SetBaseColor(Color.gray);
+						}
 					}
 				}
 			}
@@ -107,7 +107,6 @@ public class ChessBoard3D : MonoBehaviour
 
 		// Mark White K11 square in blue.
 		Vector3Int loc = properties.locWhiteK11sq;
-		MeshRenderer myMesh = squares[loc.x, loc.y, loc.z].GetComponent<MeshRenderer>();
-		myMesh.materials[0].SetColor("_Color", Color.cyan);
+		cells[loc.x, loc.y, loc.z].SetBaseColor(Color.cyan);
 	}
 }

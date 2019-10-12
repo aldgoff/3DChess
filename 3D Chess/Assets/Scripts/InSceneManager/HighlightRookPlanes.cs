@@ -85,7 +85,7 @@ public class HighlightRookPlanes : MonoBehaviour
 					if (IsOffBoard(sq, chessBoard.size)) {
 						continue;
 					}
-					chessBoard.squares[sq.x, sq.y, sq.z].transform.rotation = new Quaternion(0f, 0.0f, 0.0f, 0.0f); // Flatten.
+					chessBoard.cells[sq.x, sq.y, sq.z].square.transform.rotation = new Quaternion(0f, 0.0f, 0.0f, 0.0f); // Flatten.
 				}
 			}
 
@@ -101,13 +101,9 @@ public class HighlightRookPlanes : MonoBehaviour
 					if (IsOffBoard(sq, chessBoard.size)) {
 						continue;
 					}
-					chessBoard.squares[sq.x, sq.y, sq.z].transform.rotation = new Quaternion(4.0f, yPos, 0.0f, xPos); // Rotate.
+					chessBoard.cells[sq.x, sq.y, sq.z].square.transform.rotation = new Quaternion(4.0f, yPos, 0.0f, xPos); // Rotate.
 
-					// Highlight next square as quad or line.
-					//bool line = i == 0 || i == advSq.perimeters[currPerimeter].Length - 1;
-					//HighlightSquare(sq, line);
-					HighlightSquare(sq.x, sq.y, sq.z, DetermineCellToSource(srcSquare.x, sq.x, srcSquare.y, sq.y, rookColor));
-
+					HighlightSquare(sq.x, sq.y, sq.z, DetCellToSrc(srcSquare, sq, rookColor));
 				}
 			}
 
@@ -152,7 +148,7 @@ public class HighlightRookPlanes : MonoBehaviour
 					if (IsOffBoard(sq, chessBoard.size)) {
 						continue;
 					}
-					chessBoard.squares[sq.x, sq.y, sq.z].transform.rotation = new Quaternion(0f, 0.0f, 0.0f, 0.0f); // Flatten.
+					chessBoard.cells[sq.x, sq.y, sq.z].square.transform.rotation = new Quaternion(0f, 0.0f, 0.0f, 0.0f); // Flatten.
 				}
 			}
 
@@ -168,12 +164,9 @@ public class HighlightRookPlanes : MonoBehaviour
 					if (IsOffBoard(sq, chessBoard.size)) {
 						continue;
 					}
-					chessBoard.squares[sq.x, sq.y, sq.z].transform.rotation = new Quaternion(4.0f, yPos, 0.0f, xPos); // Rotate.
+					chessBoard.cells[sq.x, sq.y, sq.z].square.transform.rotation = new Quaternion(4.0f, yPos, 0.0f, xPos); // Rotate.
 
-					// Highlight next square as quad or line.
-					//bool line = i == 0 || i == advSq2.perimeters[currPerimeter].Length - 1;
-					//HighlightSquare(sq, line);
-					HighlightSquare(sq.x, sq.y, sq.z, DetermineCellToSource(srcSquare.x, sq.x, srcSquare.y, sq.y, rookColor));
+					HighlightSquare(sq.x, sq.y, sq.z, DetCellToSrc(srcSquare, sq, rookColor));
 				}
 			}
 
@@ -218,36 +211,43 @@ public class HighlightRookPlanes : MonoBehaviour
 		Quad,	// A pure quandrant move - lightest tint.
 	};
 
-	private CellToSource DetermineCellToSource(int srcA, int cellA, int srcB, int cellB, Color color)
+	private CellToSource DetCellToSrc(Vector3Int srcSq, Vector3Int dstSq, Color color)
 	{
 		if (color == Color.clear) {
 			return CellToSource.Clear;
 		}
 
-		if (srcA == cellA && srcB == cellB) {			return CellToSource.Point;
-		} else if (srcA == cellA || srcB == cellB) {	return CellToSource.Line;
-		} else {										return CellToSource.Quad;
+		if (srcSq == dstSq) {									return CellToSource.Point;
+		}
+		else if ((srcSq.x == dstSq.x && srcSq.y == dstSq.y)
+			  || (srcSq.y == dstSq.y && srcSq.z == dstSq.z)
+			  || (srcSq.z == dstSq.z && srcSq.x == dstSq.x)) {	return CellToSource.Line;
+		}
+		else if ((srcSq.x != dstSq.x && srcSq.y != dstSq.y)
+			  || (srcSq.y != dstSq.y && srcSq.z != dstSq.z)
+			  || (srcSq.z != dstSq.z && srcSq.x != dstSq.x)) {	return CellToSource.Quad;
+		}
+		else {													return CellToSource.Clear;
 		}
 	}
 
 	private void HighlightSquare(int x, int y, int z, CellToSource cellToSrc)
 	{
-		sqScriptClass = chessBoard.squares[x, y, z].GetComponent<HighlightSquareByRayCasting>();
-		Material mat = sqScriptClass.GetComponent<MeshRenderer>().material;
+		Cell cell = chessBoard.cells[x, y, z];
 
 		if (cellToSrc == CellToSource.Clear) {
-			rookColor = sqScriptClass.baseColor;    // Unhighlight.
+			rookColor = cell.baseColor;    // Unhighlight.
 		} else if (cellToSrc == CellToSource.Point) {
-			rookColor = (sqScriptClass.baseColor == Color.white) ? RookPointWhite : RookPointBlack; // Point.
+			rookColor = (cell.baseColor == Color.white) ? RookPointWhite : RookPointBlack; // Point.
 		} else if (cellToSrc == CellToSource.Line) {
-			rookColor = (sqScriptClass.baseColor == Color.white) ? RookLineWhite : RookLineBlack;   // Line.
+			rookColor = (cell.baseColor == Color.white) ? RookLineWhite : RookLineBlack;   // Line.
 		} else if (cellToSrc == CellToSource.Quad) {
-			rookColor = (sqScriptClass.baseColor == Color.white) ? RookQuadWhite : RookQuadBlack;   // Quadrant.
+			rookColor = (cell.baseColor == Color.white) ? RookQuadWhite : RookQuadBlack;   // Quadrant.
 		}
 		else {
 			Debug.LogError("Error: unknown CellToSource = " + cellToSrc);
 		}
-		mat.SetColor("_Color", rookColor);
+		cell.HighlightCell(rookColor);
 
 		return;
 	}
@@ -258,7 +258,8 @@ public class HighlightRookPlanes : MonoBehaviour
 		int z = srcSq.z; // Z-axis is constant in the Horizontal plane.
 		for (int x = 0; x < chessBoard.size.x; x++) { // Scan x & y.
 			for (int y = 0; y < chessBoard.size.y; y++) {
-				HighlightSquare(x, y, z, DetermineCellToSource(srcSq.x, x, srcSq.y, y, color));
+				Vector3Int dstSq = new Vector3Int(x, y, z);
+				HighlightSquare(x, y, z, DetCellToSrc(srcSq, dstSq, color));
 			}
 		}
 	}
@@ -268,7 +269,8 @@ public class HighlightRookPlanes : MonoBehaviour
 		int y = srcSq.y; // Y-axis is constant in the LeftVertical plane.
 		for (int x = 0; x < chessBoard.size.x; x++) { // Scan x & z.
 			for (int z = 0; z < chessBoard.size.z; z++) {
-				HighlightSquare(x, y, z, DetermineCellToSource(srcSq.x, x, srcSq.z, z, color));
+				Vector3Int dstSq = new Vector3Int(x, y, z);
+				HighlightSquare(x, y, z, DetCellToSrc(srcSq, dstSq, color));
 			}
 		}
 	}
@@ -278,7 +280,8 @@ public class HighlightRookPlanes : MonoBehaviour
 		int x = srcSq.x; // X-axis is constant in the RightVertical plane.
 		for (int y = 0; y < chessBoard.size.y; y++) { // Scan y & z.
 			for (int z = 0; z < chessBoard.size.z; z++) {
-				HighlightSquare(x, y, z, DetermineCellToSource(srcSq.y, y, srcSq.z, z, color));
+				Vector3Int dstSq = new Vector3Int(x, y, z);
+				HighlightSquare(x, y, z, DetCellToSrc(srcSq, dstSq, color));
 			}
 		}
 	}
@@ -304,25 +307,23 @@ public class HighlightRookPlanes : MonoBehaviour
 		return false;
 	}
 
-	public void HighlightSquare(Vector3Int sq, bool line, string point = "")
+	public void HighlightSquare(Vector3Int sq, bool line, string point = "")// TODO: get rid of.
 	{
-		sqScriptClass = chessBoard.squares[sq.x, sq.y, sq.z].GetComponent<HighlightSquareByRayCasting>();
-		Material mat = sqScriptClass.GetComponent<MeshRenderer>().material;
+		Cell cell = chessBoard.cells[sq.x, sq.y, sq.z];
+
 		if (point == "Point") {
-			rookColor = (sqScriptClass.baseColor == Color.white) ? RookPointWhite : RookPointBlack; // Point.
+			rookColor = (cell.baseColor == Color.white) ? RookPointWhite : RookPointBlack; // Point.
 		} else if (line) {
-			rookColor = (sqScriptClass.baseColor == Color.white) ? RookLineWhite : RookLineBlack;   // Line.
+			rookColor = (cell.baseColor == Color.white) ? RookLineWhite : RookLineBlack;   // Line.
 		} else {
-			rookColor = (sqScriptClass.baseColor == Color.white) ? RookQuadWhite : RookQuadBlack;   // Quadrant.
+			rookColor = (cell.baseColor == Color.white) ? RookQuadWhite : RookQuadBlack;   // Quadrant.
 		}
-		mat.SetColor("_Color", rookColor);
+		cell.HighlightCell(rookColor);
 	}
 
 	public void UnHighlightSquare(Vector3Int sq)
 	{
-		sqScriptClass = chessBoard.squares[sq.x, sq.y, sq.z].GetComponent<HighlightSquareByRayCasting>();
-		Material mat = sqScriptClass.GetComponent<MeshRenderer>().material;
-		mat.SetColor("_Color", sqScriptClass.baseColor);
+		chessBoard.cells[sq.x, sq.y, sq.z].UnhighlightCell();
 	}
 
 	// Called by HighLightSquareByGrid.SetSrcDstSquares().

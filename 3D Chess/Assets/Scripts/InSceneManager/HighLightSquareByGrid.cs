@@ -523,22 +523,14 @@ public class HighLightSquareByGrid : MonoBehaviour
 
 	private Vector3Int Highlight(Vector3Int sq, Color color)
 	{
-		HighlightSquareByRayCasting sqScriptClass;
-
-		sqScriptClass = chessBoard.squares[sq.x, sq.y, sq.z].GetComponent<HighlightSquareByRayCasting>();
-		Material mat = sqScriptClass.GetComponent<MeshRenderer>().material;
-		mat.SetColor("_Color", color);
+		chessBoard.cells[sq.x, sq.y, sq.z].HighlightCell(color);
 
 		return sq;
 	}
 
 	private Vector3Int Unhighlight(Vector3Int sq)
 	{
-		HighlightSquareByRayCasting sqScriptClass;
-
-		sqScriptClass = chessBoard.squares[sq.x, sq.y, sq.z].GetComponent<HighlightSquareByRayCasting>();
-		Material mat = sqScriptClass.GetComponent<MeshRenderer>().material;
-		mat.SetColor("_Color", sqScriptClass.baseColor);
+		chessBoard.cells[sq.x, sq.y, sq.z].UnhighlightCell();
 
 		return nullSquare;
 	}
