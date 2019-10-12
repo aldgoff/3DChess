@@ -22,10 +22,6 @@ public class ScanBoardDemo : MonoBehaviour
 
     // Runtime demo of marking squares - a simple scan through the entire board.
     public int[] scan = new int[3];
-    private MeshRenderer theMesh;
-    private Material[] theMat;
-    private Color originalColor;
-    private Color originColor;
 
     public void RunScan()
     {
@@ -36,23 +32,15 @@ public class ScanBoardDemo : MonoBehaviour
 
     private void EndScan()
     {
-        theMesh = chessBoard.squares[0, 0, 0].GetComponent<MeshRenderer>();
-        theMat = theMesh.materials;
-        theMat[0].SetColor("_Color", originColor);
-    }
+		chessBoard.cells[0, 0, 0].UnhighlightCell();
+	}
 
-    private void InitScan()
+	private void InitScan()
     {
         print("ScanBoardDemo.InitScan()");
 
         scan[0] = scan[1] = scan[2] = 0;
-        theMesh = chessBoard.squares[scan[0], scan[1], scan[2]].GetComponent<MeshRenderer>();
-        theMat = theMesh.materials;
-
-        originalColor = theMat[0].GetColor("_Color");
-        originColor = originalColor;
-
-        theMat[0].SetColor("_Color", Color.red);
+		chessBoard.cells[scan[0], scan[1], scan[2]].HighlightCell(Color.red);
 
         scanInProgress = true;
         alternate = true;
@@ -70,9 +58,9 @@ public class ScanBoardDemo : MonoBehaviour
         if (alternate) // Unhighlight previous square.
         {
             alternate = false;
-            theMat[0].SetColor("_Color", originalColor);
-        }
-        else // Highlight next square.
+			chessBoard.cells[scan[0], scan[1], scan[2]].UnhighlightCell();
+		}
+		else // Highlight next square.
         {
             NextSquare();
             if(scanInProgress == false)
@@ -81,12 +69,7 @@ public class ScanBoardDemo : MonoBehaviour
                 return;
             }
 
-            theMesh = chessBoard.squares[scan[0], scan[1], scan[2]].GetComponent<MeshRenderer>();
-            theMat = theMesh.materials;
-
-            originalColor = theMat[0].GetColor("_Color");
-
-            theMat[0].SetColor("_Color", Color.red);
+			chessBoard.cells[scan[0], scan[1], scan[2]].HighlightCell(Color.red);
 
             alternate = true;
         }
@@ -111,5 +94,4 @@ public class ScanBoardDemo : MonoBehaviour
             }
         }
     }
-
 }
