@@ -51,7 +51,7 @@ public class HighlightRookPlanes : MonoBehaviour
 	{
 		UnHighlightSquare(advSq.dstSquare);
 		for (int perimeter = advSq.perimeters.Count-1; perimeter >= 0; perimeter--) {
-			if (true) print("^^^ Coroutine: clear perimeter " + (perimeter + 1));
+			if (debug) print("^^^ Coroutine: clear perimeter " + (perimeter + 1));
 
 			for (int i = 0; i < advSq.perimeters[perimeter].Length; i++) {
 				Vector3Int sq = advSq.perimeters[perimeter][i];
@@ -252,6 +252,11 @@ public class HighlightRookPlanes : MonoBehaviour
 		return;
 	}
 
+	public void RestoreHighlighting(Vector3Int dstSq, Vector3Int srcSq)
+	{
+		HighlightSquare(dstSq.x, dstSq.y, dstSq.z, DetCellToSrc(srcSq, dstSq, rookColor));
+	}
+
 	// Planes:
 	private void Horizontal(Vector3Int srcSq, Color color)
 	{
@@ -390,10 +395,73 @@ public class HighlightRookPlanes : MonoBehaviour
 			}
 			if (advSq != null) advSqs.Add(advSq);
 			return advSq;
-		} else {
+		}
+		else {
 			print("Not in a rook plane.");
 			//validAdvSq = false;
 			return null;
 		}
+	}
+
+	// Called by HighLightSquareByGrid.SetSrcDstSquares().
+	public List<AdvancementSquare> AdvSqs(Vector3Int srcSquare, Vector3Int dstSquare)
+	{
+		List<AdvancementSquare> advSqs = new List<AdvancementSquare>();
+
+		this.srcSquare = srcSquare;
+		this.dstSquare = dstSquare;
+		print("AdvSq: " + srcSquare + " / " + dstSquare);
+
+		bool sameX = srcSquare.x == dstSquare.x;
+		bool sameY = srcSquare.y == dstSquare.y;
+		bool sameZ = srcSquare.z == dstSquare.z;
+
+		if ((sameX && sameY) || (sameX && sameZ) || (sameY && sameZ)) {
+			print("Linear rook move.");
+			AdvancementSquare advSqR1;
+			AdvancementSquare advSqR2;
+			if (sameX && sameY) {
+				advSqR1 = new RookAdvSqRect("RightVertical", srcSquare, dstSquare);
+				print("Rook right vertical linear move, Y varies; number of perimeters = " + advSqR1.Perims);
+				advSqR2 = new RookAdvSqRect("LeftVertical", srcSquare, dstSquare);
+				//print("Rook left vertical linear move, Z varies; number of perimeters = " + advSqR2.Perims);
+			} else if (sameX && sameZ) {
+				advSqR1 = new RookAdvSqRect("Horizontal", srcSquare, dstSquare);
+				print("Rook horizontal linear move, Y varies; number of perimeters = " + advSqR1.Perims);
+				advSqR2 = new RookAdvSqRect("RightVertical", srcSquare, dstSquare);
+				//print("Rook right vertical linear move, Y varies; number of perimeters = " + advSqR2.Perims);
+			} else if (sameY && sameZ) {
+				advSqR1 = new RookAdvSqRect("LeftVertical", srcSquare, dstSquare);
+				print("Rook left vertical linear move, X varies; number of perimeters = " + advSqR1.Perims);
+				advSqR2 = new RookAdvSqRect("Horizontal", srcSquare, dstSquare);
+				//print("Rook horizontal linear move, X varies; number of perimeters = " + advSqR2.Perims);
+			} else {
+				advSqR1 = null;
+				advSqR2 = null;
+			}
+			if (advSqR1 != null) advSqs.Add(advSqR1);
+			if (advSqR2 != null) advSqs.Add(advSqR2);
+		}
+		else if (sameX || sameY || sameZ) {
+			print("Quadrant rook move.");
+			AdvancementSquare advSq;
+			if (sameZ) {
+				advSq = new RookAdvSqQuad("Horizontal", srcSquare, dstSquare);
+				print("Rook Horizontal plane, advancement square number of perimeters = " + advSq.Perims);
+			} else if (sameX) {
+				advSq = new RookAdvSqQuad("RightVertical", srcSquare, dstSquare);
+				print("Rook RightVertical plane, advancement square number of perimeters = " + advSq.Perims);
+			} else if (sameY) {
+				advSq = new RookAdvSqQuad("LeftVertical", srcSquare, dstSquare);
+				print("Rook LeftVertical plane, advancement square number of perimeters = " + advSq.Perims);
+			} else {
+				advSq = null;
+			}
+			if (advSq != null) advSqs.Add(advSq);
+		}
+		else {
+			print("Not in a rook plane.");
+		}
+		return advSqs;
 	}
 }
