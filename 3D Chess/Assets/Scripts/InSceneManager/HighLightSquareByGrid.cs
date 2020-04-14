@@ -25,7 +25,7 @@ public class HighLightSquareByGrid : MonoBehaviour
 
 	private bool debug;
 
-	List<AdvancementSquare> advSqs;
+	List<AdvancementSquare> advSqs = new List<AdvancementSquare>();
 	List<List<AdvancementSquare>> advSqSets = new List<List<AdvancementSquare>>();
 
 	public void MouseBehaviorDropdownIndexChanged(int index)
@@ -35,6 +35,9 @@ public class HighLightSquareByGrid : MonoBehaviour
 		print("  MouseBehavior dropdown = " + mouseBehavior.captionText.text);
 	}
 
+	Vector3Int prevSrcSq;
+	Vector3Int prevDstSq;
+
 	// Start is called before the first frame update
 	void Start()
 	{
@@ -43,11 +46,10 @@ public class HighLightSquareByGrid : MonoBehaviour
 		print("  Initial chessBoard.chessBoardProperties.size = " + chessBoard.properties.size);
 		prevSquare = nullSquare;
 
-		srcSquare = nullSquare;
-		dstSquare = nullSquare;
+		prevSrcSq = srcSquare = nullSquare;
+		prevDstSq = dstSquare = nullSquare;
 
-		advSqs = new List<AdvancementSquare>();
-
+		print(" Size of advSqs = " + advSqSets.Count);
 		print("  Size of advSqs = " + advSqs.Count);
 	}
 
@@ -55,7 +57,7 @@ public class HighLightSquareByGrid : MonoBehaviour
 	{
 		Vector3 point = hit.point;
 
-		// Remember that chessboard coordiantes are permutation of Unity coordinates.
+		// Remember that chessboard coordinates are permutation of Unity coordinates.
 		ChessBoardProperties props = chessBoard.properties; // New, SRP compliant.
 
 		Vector2 boardXedges = props.boardXedges;
@@ -123,8 +125,6 @@ public class HighLightSquareByGrid : MonoBehaviour
 		return new Vector3Int(xCoord, yCoord, zCoord);
 	}
 
-	bool frozen = true;
-
 	// Update is called once per frame
 	void Update()
 	{
@@ -141,6 +141,7 @@ public class HighLightSquareByGrid : MonoBehaviour
 			break;
 		case "Animate Advancement Squares":
 			ManageAdvSqs();
+			//ManageAdv();
 			break;
 
 		default:
@@ -193,7 +194,7 @@ public class HighLightSquareByGrid : MonoBehaviour
 		return advSqrs;
 	}
 
-	AdvancementSquare CreateAdvSq(Vector3Int srcSq, Vector3Int dstSq)
+	AdvancementSquare CreateAdvSq(Vector3Int srcSq, Vector3Int dstSq) // Deprecate.
 	{
 		AdvancementSquare advSq = null;
 		List<AdvancementSquare> advSqs = new List<AdvancementSquare>();
@@ -222,7 +223,25 @@ public class HighLightSquareByGrid : MonoBehaviour
 			advSqs.RemoveAt(i);
 			print("  Size of advSqs = " + advSqs.Count);
 		}
+	}
 
+	// Call as StartCoroutine(ClearAllAdvSqsInReverseOrder()).
+	IEnumerator ClearAllAdvSqsInRevOrder()
+	{
+		print(advSqSets.Count + " advancement square sets to clear.");
+
+		while (advSqSets.Count > 0) {
+			int last = advSqSets.Count - 1;
+			List<AdvancementSquare> advSqrs = advSqSets[last];
+			print(advSqrs.Count + " advancement squares to clear.");
+
+			for (int j=advSqrs.Count-1; j>=0; j--) {
+				StartCoroutine(highlightRookPlanes.ClearAdvSqByPerimeter(advSqrs[j]));
+				yield return new WaitForSeconds(0.5f); // TODO: put advSqByPerimeter speed under player control.
+			}
+
+			advSqSets.RemoveAt(last);
+		}
 	}
 
 	bool lastAdvSqLocked;
@@ -389,22 +408,153 @@ public class HighLightSquareByGrid : MonoBehaviour
 	}
 
 	/* Todo list:
-	 * Restoring dstSquare on lock via AdvSq.
-	 * Restoring srcSquare on lock via AdvSq.
-	 * Overlapping advancement squares.
-	 * Same logic for moving the srcSquare around.
-	 * Adjusting within an advancement square.
-	 * Deprecating obsolete code.
+	 * x Clearing all advancement squares off the board.
+	 *   Restoring dstSquare on lock via AdvSq.
+	 *   Restoring srcSquare on lock via AdvSq.
+	 *   Overlapping advancement squares.
+	 *   Same logic for moving the srcSquare around.
+	 *   Adjusting within an advancement square.
+	 *   Deprecating obsolete code.
 	 */
 
 	bool newAdvSq;
 	bool clearAdvSq;
 
+	Color srcColor = Color.yellow;
+	Color dstColor = Color.magenta;
+
+	void ManageSrcSquare(Vector3Int raycastSquare) // Fully working 10/14/19.
+	{
+		prevDstSq = dstSquare;
+		prevSrcSq = srcSquare;
+
+		if (raycastSquare == dstSquare) {
+			if (srcSquare != nullSquare) {                                  // Move clobber.
+				print("Move clobbers dstSquare " + srcSquare +">"+ dstSquare);
+				Unhighlight(srcSquare);
+			}
+			else {															// Clobber.
+				print("Clobbers dstSquare " + srcSquare +">"+ dstSquare);
+			}
+			dstSquare = Unhighlight(dstSquare); // Now the nullSquare.
+			srcSquare = Highlight(raycastSquare, srcColor);
+		}
+		else if (srcSquare == nullSquare) {									// Show.
+			print("Show srcSquare " + srcSquare +">"+ raycastSquare);
+			srcSquare = Highlight(raycastSquare, srcColor);
+		}
+		else if (srcSquare == raycastSquare) {                              // Toggle.
+			print("Toggle srcSquare " + srcSquare +">"+ nullSquare);
+			srcSquare = Unhighlight(srcSquare); // Now the nullSquare.
+		}
+		else {                                                              // Move.
+			print("Move srcSquare " + srcSquare +">"+ raycastSquare);
+			Unhighlight(srcSquare);
+			srcSquare = Highlight(raycastSquare, srcColor);
+		}
+	}
+
+	void ManageDstSquare(Vector3Int raycastSquare) // Fully working 10/14/19.
+	{
+		prevDstSq = dstSquare;
+		prevSrcSq = srcSquare;
+
+		if (raycastSquare == srcSquare) {
+			if (dstSquare != nullSquare) {                                  // Move clobber.
+				print("Move clobbers srcSquare " + dstSquare +">"+ srcSquare);
+				Unhighlight(dstSquare);
+			}
+			else {															// Clobber.
+				print("Clobbers srcSquare " + dstSquare +">"+ srcSquare);
+			}
+			srcSquare = Unhighlight(srcSquare); // Now the nullSquare.
+			dstSquare = Highlight(raycastSquare, dstColor);
+		}
+		else if (dstSquare == nullSquare) {									// Show.
+			print("Show dstSquare " + dstSquare +">"+ raycastSquare);
+			dstSquare = Highlight(raycastSquare, dstColor);
+		}
+		else if (dstSquare == raycastSquare) {                              // Toggle.
+			print("Toggle dstSquare " + dstSquare +">"+ nullSquare);
+			dstSquare = Unhighlight(dstSquare); // Now the nullSquare.
+		}
+		else {																// Move.
+			print("Move dstSquare " + dstSquare +">"+ raycastSquare);
+			Unhighlight(dstSquare);
+			dstSquare = Highlight(raycastSquare, dstColor);
+		}
+	}
+
+	void ManageSrcAdvSqs()
+	{
+		print("Need to also manage the advancement squares.");
+	}
+
+	void ManageDstAdvSqs()
+	{
+		print("Need to also manage the advancement squares.");
+
+		if (prevDstSq == nullSquare) {
+			if (dstSquare != srcSquare) {
+				print("Fresh dstSquare " + prevDstSq + ">"+ dstSquare);
+				advSqs = CreateAdvSqs(srcSquare, dstSquare);
+				if (advSqs.Count > 0) {
+					advSqSets.Add(advSqs);
+					print(advSqs.Count + " new advSq(s).");
+					newAdvSq = true;
+				} else {
+					print("Not in plane.");
+				}
+			}
+		}
+	}
+
+	void ManageAdv()
+	{
+		Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition); // From camera to mouse.
+		RaycastHit hit;
+
+		if (Physics.Raycast(ray, out hit)) { // Ray hit a GameObject (square, piece, etc.).
+			Vector3Int raycastSquare = FindRaycastSquare(hit);
+
+			// Click on board marks source square: show, clobber, toggle(clear), move, or lock.
+			if (Input.GetMouseButtonUp(1)) {
+				ManageSrcSquare(raycastSquare);
+				if (dstSquare != nullSquare) {
+					ManageSrcAdvSqs();
+				}
+			}
+
+			// Click on board marks destination square: show, clobber, toggle (clear), move, or lock.
+			if (Input.GetMouseButtonUp(0)) {
+				ManageDstSquare(raycastSquare);
+				if (srcSquare != nullSquare) {
+					ManageDstAdvSqs();
+				}
+				StartCoroutine(ManageAdvSqSets());
+			}
+
+		}
+		else {
+			// Click off board, clear source square.
+			if (Input.GetMouseButtonUp(1)) {
+				if (srcSquare != nullSquare) {
+					print("Clear board of srcSquare " + srcSquare +">"+ nullSquare);
+					srcSquare = Unhighlight(srcSquare);
+				}
+			}
+			// Click off board, clear destination square.
+			if (Input.GetMouseButtonUp(0)) {
+				if (dstSquare != nullSquare) {
+					print("Clear board of dstSquare " + dstSquare +">"+ nullSquare);
+					dstSquare = Unhighlight(dstSquare);
+				}
+			}
+		}
+	}
+
 	void ManageAdvSqs()
 	{
-		Color srcColor = Color.yellow;
-		Color dstColor = Color.magenta;
-
 		Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition); // From camera to mouse.
 		RaycastHit hit;
 
@@ -416,42 +566,79 @@ public class HighLightSquareByGrid : MonoBehaviour
 				if (srcSquare == nullSquare) {
 					if (raycastSquare != dstSquare) {								// Fresh.
 						print("Fresh srcSquare " + srcSquare +">"+ raycastSquare);
-						if (dstSquare != nullSquare) print("Possibly advSq(s)");
+						srcSquare = Highlight(raycastSquare, srcColor);
+						if (dstSquare != nullSquare) {
+							print("Possibly advSq(s)");
+							advSqs = CreateAdvSqs(srcSquare, dstSquare);
+							if (advSqs.Count > 0) {
+								advSqSets.Add(advSqs);
+								print(advSqs.Count + " new advSq(s).");
+								newAdvSq = true;
+							} else {
+								print("Not in plane.");
+							}
+						}
 					}
 					else if (raycastSquare == dstSquare) {							// Clobber.
 						print("Clobbers dstSquare " + srcSquare +">"+ dstSquare);
 						dstSquare = Unhighlight(dstSquare);
+						srcSquare = Highlight(raycastSquare, srcColor);
 					}
-					srcSquare = Highlight(raycastSquare, srcColor);
 				}
 				else if (srcSquare == raycastSquare) {								// Toggle.
 					print("Toggle srcSquare " + srcSquare);
 					srcSquare = Unhighlight(srcSquare);
 					print("Clear advSq(s)");
+					clearAdvSq = true;
 				}
 				else {
 					if (raycastSquare != dstSquare) {								// Move.
 						print("Move srcSquare " + srcSquare +">"+ raycastSquare);
-						print("Possibly clear advSq(s)");
-						print("Possibly new or shift advSq(s)");
+						print("Possibly shift advSq(s)");
+						print("Implementing clear and new advSq(s)");
+						srcSquare = Unhighlight(srcSquare);
+						srcSquare = Highlight(raycastSquare, srcColor);
+						advSqs = CreateAdvSqs(srcSquare, dstSquare);
+						if (advSqs.Count > 0) {
+							advSqSets.Add(advSqs);
+							print("Clear old advSq(s), show new.");
+							clearAdvSq = newAdvSq = true;
+						}
 					}
-					else if (raycastSquare == dstSquare) {							// Lock.
+					else if (raycastSquare == dstSquare) {                          // Obliterate.
 						print("Move clobbers dstSquare " + srcSquare +">"+ dstSquare);
+						RestoreSrcSqHighlighting(dstSquare, srcSquare);
 						dstSquare = Unhighlight(dstSquare);
-						print("Possibly lock advSq(s)");
+						srcSquare = Highlight(raycastSquare, srcColor);
+						if (advSqs.Count > 0) {
+							print("Obliterate advSq(s)");
+							clearAdvSq = true; // Coroutine will delete from list.
+						}
 					}
-					Unhighlight(srcSquare);
-					srcSquare = Highlight(raycastSquare, srcColor);
+				}
+				StartCoroutine(ManageAdvSqSets());
+			}
+
+			// To lock an advancement square, hover over either src or dst square and hit the L key.
+			if (Input.GetKeyUp(KeyCode.L)) {                                    // Lock.
+				if (raycastSquare == dstSquare) {
+					print("Lock advSq(s)");
+					RestoreDstSqHighlighting(dstSquare, srcSquare);
+					dstSquare = nullSquare;
+				} else if (raycastSquare == srcSquare) {
+					print("Lock advSq(s)");
+					RestoreSrcSqHighlighting(dstSquare, srcSquare);
+					srcSquare = nullSquare;
 				}
 			}
 
 			// Click marks destination square: fresh, clobber, toggle (clear), move, or lock.
 			if (Input.GetMouseButtonUp(0)) {
 				if (dstSquare == nullSquare) {
-					if (raycastSquare != srcSquare) {								// Fresh.
+					if (raycastSquare != srcSquare) {
 						print("Fresh dstSquare " + dstSquare +">"+ raycastSquare);
-						if (srcSquare != nullSquare) {
-							dstSquare = Highlight(raycastSquare, dstColor);
+						dstSquare = Highlight(raycastSquare, dstColor);
+						if (srcSquare != nullSquare) {								// Fresh.
 							advSqs = CreateAdvSqs(srcSquare, dstSquare);
 							if (advSqs.Count > 0) {
 								advSqSets.Add(advSqs);
@@ -468,36 +655,50 @@ public class HighLightSquareByGrid : MonoBehaviour
 						dstSquare = Highlight(raycastSquare, dstColor);
 					}
 				}
-				else if (dstSquare == raycastSquare) {								// Toggle.
+				else if (dstSquare == raycastSquare) {                              // Toggle.
 					print("Toggle dstSquare " + dstSquare);
-					dstSquare = Unhighlight(dstSquare);
-					print("Clear advSq(s)");
-					clearAdvSq = true;
+					if (advSqSets.Count > 0) {
+						print("Clear advSq(s)");
+						clearAdvSq = true;
+					}
+					dstSquare = Unhighlight(dstSquare); // Now the nullSquare.
 				}
 				else {
-					if (raycastSquare != srcSquare) {								// Move.
+					if (raycastSquare != srcSquare) {
 						print("Move dstSquare " + dstSquare +">"+ raycastSquare);
-						// Adjust will take something else.
-						print("Possibly adjust advSq(s)");
-						print("Implementing clear and new advSq(s)");
-						dstSquare = Unhighlight(dstSquare);
-						dstSquare = Highlight(raycastSquare, dstColor);
-						advSqs = CreateAdvSqs(srcSquare, dstSquare);
-						if (advSqs.Count > 0) {
-							advSqSets.Add(advSqs);
-							print("Clear old advSq(s), show new.");
-							clearAdvSq = newAdvSq = true;
+						if (false) {												// Adjust.
+							// dstSq within existing advSq.
+							print("Adjust advSq(s)");
+						}
+						else {														// Move.
+							Unhighlight(dstSquare);
+							print("Implementing clear and new advSq(s)");
+							if (advSqSets.Count > 0) {
+								RestoreDstSqHighlighting(dstSquare, srcSquare);
+								print("Need to clear previous " + advSqs.Count + " advSq(s) if unlocked.");
+								clearAdvSq = true;
+							}
+							dstSquare = Highlight(raycastSquare, dstColor);
+							advSqs = CreateAdvSqs(srcSquare, dstSquare);
+							if (advSqs.Count > 0) {
+								advSqSets.Add(advSqs);
+								print("Need to show " + advSqs.Count + " new advSq(s).");
+								newAdvSq = true;
+							}
 						}
 					}
-					else if (raycastSquare == srcSquare) {							// Lock.
+					else if (raycastSquare == srcSquare) {							// Obliterate.
 						print("Move clobbers srcSquare " + dstSquare +">"+ srcSquare);
-						print("Possibly lock advSq(s)");
-						Unhighlight(dstSquare);
-						RestoreHighlighting(dstSquare, srcSquare);
-						dstSquare = nullSquare;
+						RestoreDstSqHighlighting(dstSquare, srcSquare);
+						srcSquare = Unhighlight(srcSquare);
+						dstSquare = Highlight(raycastSquare, dstColor);
+						if (advSqSets.Count > 0) {
+							print("Obliterate advSq(s)");
+							clearAdvSq = true; // Coroutine will delete from list.
+						}
 					}
 				}
-				// Show last, clear last, adjust/shift last, clear prev and show last(current).
+				// Show last, clear last, adjust/shift last, clear unlocked prev and show last(current).
 				StartCoroutine(ManageAdvSqSets());
 			}
 		}
@@ -509,6 +710,7 @@ public class HighLightSquareByGrid : MonoBehaviour
 				}
 				else if(dstSquare == nullSquare) {
 					print("Clear board of all advSqs");
+					StartCoroutine(ClearAllAdvSqsInRevOrder());
 				}
 			}
 			if (Input.GetMouseButtonUp(0)) {
@@ -518,12 +720,13 @@ public class HighLightSquareByGrid : MonoBehaviour
 				}
 				else if (srcSquare == nullSquare) {
 					print("Clear board of all advSqs");
+					StartCoroutine(ClearAllAdvSqsInRevOrder());
 				}
 			}
 		}
 	}
 
-	void RestoreHighlighting(Vector3Int dstSq, Vector3Int srcSq)
+	void RestoreDstSqHighlighting(Vector3Int dstSq, Vector3Int srcSq)
 	{
 		print("Need to highlight dstSquare with proper advSq color & tinting.");
 
@@ -534,11 +737,21 @@ public class HighLightSquareByGrid : MonoBehaviour
 		}
 	}
 
+	void RestoreSrcSqHighlighting(Vector3Int dstSq, Vector3Int srcSq)
+	{
+		print("Need to highlight srcSquare with proper advSq color & tinting.");
+
+		string plane = planesSelection.selectedPlane.text; // TODO: get from advSq.
+
+		if (planesSelection.rookPlanes.Contains(plane)) {
+			highlightRookPlanes.HighlightSquare(srcSq.x, srcSq.y, srcSq.z, HighlightRookPlanes.CellToSource.Point);
+		}
+	}
+
 	private IEnumerator ManageAdvSqSets()
 	{
-		print("ManageAdvSqSets() " + advSqSets.Count);
-
 		if (newAdvSq && clearAdvSq) { // Move.
+			print("Clearing advancement square(s) in progres...");
 			advSqs = advSqSets[advSqSets.Count - 2];
 			for (int i = advSqs.Count - 1; i >= 0; i--) {
 				// TODO: figure out types, am assuming rook here.
@@ -548,6 +761,8 @@ public class HighLightSquareByGrid : MonoBehaviour
 				yield return new WaitForSeconds(delayLaunch);
 			}
 			advSqSets.Remove(advSqs);
+
+			print("Showing advancement square(s) in progres...");
 			advSqs = advSqSets[advSqSets.Count - 1];
 			for (int i = 0; i < advSqs.Count; i++) {
 				// TODO: figure out types, am assuming rook here.
@@ -557,8 +772,10 @@ public class HighLightSquareByGrid : MonoBehaviour
 				yield return new WaitForSeconds(delayLaunch);
 			}
 			clearAdvSq = newAdvSq = false;
+			print("Done clearing and showing advancement square(s). AdvSqSets = " + advSqSets.Count);
 		}
 		else if (clearAdvSq) { // Toggle.
+			print("Clearing advancement square(s) in progres...");
 			advSqs = advSqSets[advSqSets.Count - 1];
 			for (int i = advSqs.Count - 1; i >= 0; i--) {
 				// TODO: figure out types, am assuming rook here.
@@ -569,8 +786,10 @@ public class HighLightSquareByGrid : MonoBehaviour
 			}
 			advSqSets.Remove(advSqs);
 			clearAdvSq = false;
+			print("Done clearing advancement square(s). AdvSqSets = " + advSqSets.Count);
 		}
 		else if (newAdvSq) { // Fresh.
+			print("Showing advancement square(s) in progres...");
 			advSqs = advSqSets[advSqSets.Count-1];
 			for(int i=0; i<advSqs.Count; i++) {
 				// TODO: figure out types, am assuming rook here.
@@ -580,6 +799,7 @@ public class HighLightSquareByGrid : MonoBehaviour
 				yield return new WaitForSeconds(delayLaunch);
 			}
 			newAdvSq = false;
+			print("Done showing advancement square(s). AdvSqSets = " + advSqSets.Count);
 		}
 	}
 
@@ -597,7 +817,10 @@ public class HighLightSquareByGrid : MonoBehaviour
 		return nullSquare;
 	}
 
-	void HighlightPlanes()
+	bool frozen = true; // Clicking toggles if highlighted planes are frozen.
+	bool highlightedPlane = false; // Clicks outside the board should not freeze highlighted planes.
+
+	void HighlightPlanes() // Highlight planes with mouse over & click to freeze.
 	{
 		Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition); // From camera to mouse.
 
@@ -624,10 +847,12 @@ public class HighLightSquareByGrid : MonoBehaviour
 						}
 						// Seampoint - add other bases pieces.
 
+						highlightedPlane = false;
 						prevSquare = nullSquare;
 					}
 				}
-			} else if (raycastSquare != prevSquare) {
+			}
+			else if (raycastSquare != prevSquare) {
 				if (!frozen) {
 					if (prevSquare != nullSquare) { // Unhighlite prevSquare.
 						if (planesSelection.rookPlanes.Contains(plane)) {
@@ -647,11 +872,12 @@ public class HighLightSquareByGrid : MonoBehaviour
 					}
 					// Seampoint - add other bases pieces.
 
+					highlightedPlane = true;
 					prevSquare = raycastSquare;
 				}
 			}
-
-		} else {
+		}
+		else {
 			if (!frozen) {
 				if (prevSquare != nullSquare) { // Unhighlite prevSquare.
 					if (planesSelection.rookPlanes.Contains(plane)) {
@@ -662,6 +888,7 @@ public class HighLightSquareByGrid : MonoBehaviour
 					}
 					// Seampoint - add other bases pieces.
 
+					highlightedPlane = false;
 					prevSquare = nullSquare;
 				}
 			}
@@ -669,6 +896,9 @@ public class HighLightSquareByGrid : MonoBehaviour
 
 		if (Input.GetMouseButtonUp(0)) {
 			frozen = !frozen;
+			if (!highlightedPlane) {
+				frozen = false;
+			}
 		}
 	}
 }
