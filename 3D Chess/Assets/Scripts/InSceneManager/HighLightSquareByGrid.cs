@@ -16,7 +16,7 @@ public class HighLightSquareByGrid : MonoBehaviour
 	public HighlightBishopPlanes highlightBishopPlanes;
 
 	// Used to highlight planes.
-	Vector3Int nullSquare = new Vector3Int(-1, -1, -1); // TODO: make const.
+	readonly Vector3Int nullSquare = new Vector3Int(-1, -1, -1);
 	Vector3Int prevSquare;
 
 	// Used to highlight advancement squares.

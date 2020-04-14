@@ -43,7 +43,7 @@ public class AdvancementSquare
 		return MetaSet.Different;
 	}
 
-	protected Vector3Int nullSquare = new Vector3Int(-1, -1, -1); // TODO: remove dup nullSquare, move up.
+	protected readonly Vector3Int nullSquare = new Vector3Int(-1, -1, -1); // TODO: Make nullSquare a global.
 }
 
 // Seampoint - potential; may add intermediate classes for quadrant and rectangle advancement squares.
@@ -143,7 +143,7 @@ public class RookAdvSqQuad : AdvancementSquare // Complete.
 		}
 		else {
 			Debug.Log("*** Error: Unknown rook plane, should never happen.");
-			// TODO: How do you do asserts in C#?
+			Debug.Assert(false);
 		}
 
 		Perims = perimeters.Count; // Redundant.
@@ -271,7 +271,7 @@ public class RookAdvSqRect : AdvancementSquare // Incomplete.
 		}
 		else {
 			Debug.Log("*** Error: Unknown rook plane, should never happen.");
-			// TODO: How do you do asserts in C#?
+			Debug.Assert(false);
 		}
 	}
 }
