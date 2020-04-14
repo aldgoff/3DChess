@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Cell
 {
-	public GameObject square; // Can display a mesh material colar, respond to rayhits, and rotate.
+	public GameObject square; // Can display a mesh material color, respond to rayhits, and rotate.
 
 	private Material mat; // Material that covers the cube's (square) mesh.
 	public Color baseColor; // Typcially white or a gray, and maybe cyan for White K11 square.
@@ -24,12 +24,12 @@ public class Cell
 		mat.SetColor("_Color", baseColor);
 	}
 
-	public void HighlightCell(Color color) // TODO: Rename to Highlight().
+	public void HighlightCell(Color color)
 	{
 		mat.SetColor("_Color", color);
 	}
 
-	public void UnhighlightCell() // TODO: Rename to Unhighlight().
+	public void UnhighlightCell()
 	{
 		mat.SetColor("_Color", baseColor);
 	}

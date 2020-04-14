@@ -75,7 +75,7 @@ public class ScanBoardDemo : MonoBehaviour
         }
     }
 
-    private void NextSquare() // TODO: replace magic numbers.
+    private void NextSquare()
     {
         scan[0]++;
         if (scan[0] >= chessBoard.size.x)

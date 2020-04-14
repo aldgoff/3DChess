@@ -8,6 +8,7 @@ using System;
 
 public class HighlightRookPlanes : MonoBehaviour
 {
+	#region Class Variables
 	public ChessBoard3D chessBoard;
 
 	private Vector3Int nullSquare = new Vector3Int(-1, -1, -1);
@@ -15,6 +16,7 @@ public class HighlightRookPlanes : MonoBehaviour
 	private Vector3Int srcSquare, dstSquare;
 
 	private bool debug;
+	#endregion
 
 	void Start() {
 		print("----- HighlightRookPlanes.Start() -----");
@@ -27,23 +29,22 @@ public class HighlightRookPlanes : MonoBehaviour
 
 	// Public interface for highlighting rook planes:
 	// TODO: Add interface to unlight planes.
-	// TODO: rename square to srcSq.
-	public void HighlightPlanes(string plane, Vector3Int square, Color color)
+	public void HighlightPlanes(string plane, Vector3Int srcSq, Color color)
 	{
 		// Plane comes from the UI dropdown.
 		// Square is the cell the mouse is hovering over, determined by raycasting.
 		// Color if clear implies unhighlight.
 
 		if (plane == "Rook Planes") {
-			Horizontal(square, color);
-			LeftVertical(square, color);
-			RightVertical(square, color);
+			Horizontal(srcSq, color);
+			LeftVertical(srcSq, color);
+			RightVertical(srcSq, color);
 		} else if (plane == "  Horizontal") {
-			Horizontal(square, color);
+			Horizontal(srcSq, color);
 		} else if (plane == "  LeftVertical") {
-			LeftVertical(square, color);
+			LeftVertical(srcSq, color);
 		} else if (plane == "  RightVertical") {
-			RightVertical(square, color);
+			RightVertical(srcSq, color);
 		} else {
 			print("Error: unknown Rook plane " + plane);
 		}

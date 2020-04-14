@@ -9,8 +9,9 @@ using UnityEngine.UI;
  *    x     z
  *    y     x
  *    z     y
+ * TODO: make these variables under user control.
  * Squares are spaced 1 unit apart horizontally.
- * Currently spaced 2 units vertically. TODO: make variable under user control.
+ * Currently spaced 2 units vertically.
  * Squares are 0.96 x 0.96 x 0.1.
  * Center of board is placed at Unity origin (0,0,0).
  * TODO: Code architecture.
