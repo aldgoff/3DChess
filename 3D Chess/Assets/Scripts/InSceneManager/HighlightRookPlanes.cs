@@ -21,10 +21,13 @@ public class HighlightRookPlanes : MonoBehaviour
 		srcSquare = nullSquare;
 		dstSquare = nullSquare;
 	}
+
 	void Update() {
 	}
 
 	// Public interface for highlighting rook planes:
+	// TODO: Add interface to unlight planes.
+	// TODO: rename square to srcSq.
 	public void HighlightPlanes(string plane, Vector3Int square, Color color)
 	{
 		// Plane comes from the UI dropdown.
@@ -204,7 +207,7 @@ public class HighlightRookPlanes : MonoBehaviour
 	static private Color RookPointBlack = Color.Lerp(RookLineBlack, Color.black, 0.4f);
 
 	// Tinting:
-	private enum CellToSource {
+	public enum CellToSource {
 		Clear,	// Overloading enum so single interface for highlight and unhighlight.
 		Point,	// Nexus of the planes - darkest tink.
 		Line,	// Represents a straight line move - medium tint.
@@ -231,7 +234,7 @@ public class HighlightRookPlanes : MonoBehaviour
 		}
 	}
 
-	private void HighlightSquare(int x, int y, int z, CellToSource cellToSrc)
+	public void HighlightSquare(int x, int y, int z, CellToSource cellToSrc)
 	{
 		Cell cell = chessBoard.cells[x, y, z];
 
