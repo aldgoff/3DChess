@@ -66,14 +66,27 @@ namespace project_status
 //   PlanesSelection
 //   moreToCome
 
+[System.Serializable] // Uncomment will allow visibility in the Unity Inspector.
+public class RawData
+{
+	public int samIam;
+}
+
 public class SceneManager : MonoBehaviour
 {
 	public ChessBoard3D chessBoard;
     public HighLightSquareByGrid highLight;
+	public RawData rawData;
 	// Seampoint: add another object; => another script with another new class.
 
-    // Start is called before the first frame update
-    void Start()
+	private void Awake()
+	{
+		print("----- SceneManager.Awake() -----");
+		Debug.Log("RawData.samIam = " + rawData.samIam);
+	}
+
+	// Start is called before the first frame update
+	void Start()
     {
 		print("----- SceneManager.Start() -----");
 		Debug.Log("Testing object reference chain - " + chessBoard.properties.boardVerticalSep);
